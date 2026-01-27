@@ -12,10 +12,11 @@
 
 <style>
 body{margin:0;padding:20px;background:#0b0b0b;color:#fff;font-family:Inter}
-.card{background:#151515;border:1px solid #242424;border-radius:16px;padding:16px;margin-bottom:16px}
+.card{background:#151515;border:1px solid #242424;border-radius:18px;padding:16px;margin-bottom:16px}
 input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #242424;background:#0b0b0b;color:#fff}
 button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 .preview{font-size:13px;color:#cbd5f5;line-height:1.5}
+.file-box{border-top:1px dashed #333;padding-top:12px;margin-top:12px}
 .success{color:#22c55e}
 .error{color:#ef4444}
 </style>
@@ -24,13 +25,14 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 <body>
 
 <div class="card">
-  <h2>Importar Resumo de Vendas</h2>
-  <input type="file" id="file" accept=".xls,.xlsx"><br><br>
+  <h2>Importar Resumo de Vendas (Múltiplos Arquivos)</h2>
+
+  <input type="file" id="files" accept=".xls,.xlsx" multiple><br><br>
 
   <label>Data do lançamento</label>
   <input type="date" id="data"><br><br>
 
-  <button onclick="processar()">Processar Arquivo</button>
+  <button onclick="processarArquivos()">Processar Arquivos</button>
 </div>
 
 <div class="card">
@@ -39,7 +41,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <div class="card">
-  <button onclick="salvar()">Salvar no Sistema</button>
+  <button onclick="salvarTudo()">Salvar Tudo no Sistema</button>
   <div id="msg"></div>
 </div>
 
@@ -49,15 +51,16 @@ const SUPABASE_URL = "https://dxkszikemntfusfyrzos.supabase.co";
 const SUPABASE_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ================= AGRUPAMENTO ================= */
+/* ================= CONFIG AGRUPAMENTO ================= */
 const categoriasAgrupadas = {
-  "CRÉDITO": ["credito", "cartao credito", "credito pos", "credito tef", "cart credito"],
+  "CRÉDITO": ["credito", "cartao credito", "credito pos", "credito tef", "cart credito", "crédito à vista"],
   "DÉBITO": ["debito", "cartao debito", "debito pos", "debito tef"],
   "PIX": ["pix", "pix tef", "pix pos", "qrcode"],
   "DINHEIRO": ["dinheiro"],
   "CREDIÁRIO": ["crediario", "crediario clientes"],
   "VOUCHER": ["voucher"],
-  "ONLINE": ["pagamento online"],
+  "ONLINE": ["pagamento online", "pgto online"],
+  "CONSUMO INTERNO": ["funcionario", "consumo funcionarios"],
   "OUTROS": []
 };
 
@@ -74,60 +77,92 @@ function agruparModalidade(nome){
 }
 
 /* ================= VARIÁVEIS ================= */
-let registros = [];
-let empresaDetectada = "";
+let todosRegistros = [];
 
 /* ================= PROCESSAR ================= */
-function processar(){
-  const file = file.files[0];
+async function processarArquivos(){
+  const files = document.getElementById("files").files;
   const data = document.getElementById("data").value;
-  if(!file || !data){ alert("Selecione arquivo e data"); return; }
+  const preview = document.getElementById("preview");
 
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result,{type:"binary"});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(ws,{header:1});
+  if(!files.length || !data){
+    alert("Selecione arquivos e data");
+    return;
+  }
 
-    registros = [];
-    empresaDetectada = "DESCONHECIDA";
+  todosRegistros = [];
+  preview.innerHTML = "";
 
-    // 🔍 Detecta empresa (robusto)
-    rows.flat().forEach(cell=>{
-      if(typeof cell === "string" && normalize(cell).includes("loja")){
-        empresaDetectada = cell.split("-").slice(1).join("-").trim() || cell.trim();
-      }
-    });
+  for(const file of files){
+    await processarArquivo(file, data, preview);
+  }
+}
 
-    // 📊 Processa vendas
-    rows.forEach(r=>{
-      const forma = r[1];
-      const valor = Number(String(r[2]).replace(",","."));
-      if(typeof forma === "string" && valor > 0){
-        const modalidade = agruparModalidade(forma);
-        registros.push({
-          empresa: empresaDetectada,
-          data,
-          modalidade,
-          valor,
-          origem: "IMPORTACAO_EXCEL"
-        });
-      }
-    });
+function processarArquivo(file, data, preview){
+  return new Promise(resolve=>{
+    const reader = new FileReader();
 
-    preview.innerHTML = `<strong>Empresa:</strong> ${empresaDetectada}<br><br>` +
-      registros.map(r=>`• ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>");
-  };
-  reader.readAsBinaryString(file);
+    reader.onload = e => {
+      const wb = XLSX.read(e.target.result,{type:"binary"});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1});
+
+      let empresa = "DESCONHECIDA";
+      let registrosArquivo = [];
+
+      // 🔍 Detecta empresa
+      rows.flat().forEach(cell=>{
+        if(typeof cell === "string" && normalize(cell).includes("loja")){
+          empresa = cell.split("-").slice(1).join("-").trim() || cell.trim();
+        }
+      });
+
+      // 📊 Processa linhas
+      rows.forEach(r=>{
+        const forma = r[1];
+        const valor = Number(String(r[2]).replace(",","."));
+        if(typeof forma === "string" && valor > 0){
+          registrosArquivo.push({
+            empresa,
+            data,
+            modalidade: agruparModalidade(forma),
+            valor,
+            origem: "IMPORTACAO_EXCEL",
+            arquivo_origem: file.name
+          });
+        }
+      });
+
+      todosRegistros.push(...registrosArquivo);
+
+      // 🖥 Preview
+      preview.innerHTML += `
+        <div class="file-box">
+          <strong>Arquivo:</strong> ${file.name}<br>
+          <strong>Empresa:</strong> ${empresa}<br>
+          ${registrosArquivo.map(r=>`• ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
+        </div>
+      `;
+
+      resolve();
+    };
+
+    reader.readAsBinaryString(file);
+  });
 }
 
 /* ================= SALVAR ================= */
-async function salvar(){
-  if(!registros.length){ alert("Nada para salvar"); return; }
-  const { error } = await sb.from("resumo_entradas").insert(registros);
-  msg.innerHTML = error
+async function salvarTudo(){
+  if(!todosRegistros.length){
+    alert("Nada para salvar");
+    return;
+  }
+
+  const { error } = await sb.from("resumo_entradas").insert(todosRegistros);
+
+  document.getElementById("msg").innerHTML = error
     ? `<div class="error">Erro ao salvar</div>`
-    : `<div class="success">Importação concluída</div>`;
+    : `<div class="success">Todos os arquivos importados com sucesso</div>`;
 }
 </script>
 
