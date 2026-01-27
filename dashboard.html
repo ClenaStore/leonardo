@@ -12,16 +12,18 @@
                user-scalable=no">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
 :root{
   --bg:#0b0b0b;
-  --card:#141414;
+  --card:#151515;
   --border:#242424;
 
   --gold:#d4af37;
   --green:#22c55e;
   --red:#ef4444;
+
   --text:#f5f5f5;
   --muted:#9ca3af;
 }
@@ -38,19 +40,21 @@ html,body{
   height:100%;
   background:var(--bg);
   color:var(--text);
+  overflow:auto;
+  scrollbar-width:none;          /* Firefox */
+}
+body::-webkit-scrollbar{
+  display:none;                  /* Chrome / Safari */
 }
 
 /* HEADER */
 .header{
   padding:16px;
 }
-
 .header h2{
   font-size:18px;
   font-weight:800;
-  margin-bottom:4px;
 }
-
 .header span{
   font-size:12px;
   color:var(--muted);
@@ -58,14 +62,13 @@ html,body{
 
 /* FILTROS */
 .filters{
+  padding:0 16px 16px;
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
-  padding:0 16px 16px;
 }
-
-.filters select,
-.filters input{
+.filters input,
+.filters select{
   width:100%;
   padding:12px;
   border-radius:12px;
@@ -82,73 +85,66 @@ html,body{
   gap:12px;
   padding:0 16px;
 }
-
 .card{
   background:var(--card);
   border:1px solid var(--border);
   border-radius:18px;
   padding:16px;
 }
-
 .card .label{
   font-size:12px;
   color:var(--muted);
-  margin-bottom:6px;
 }
-
 .card .value{
   font-size:22px;
   font-weight:800;
+  margin-top:6px;
 }
-
-/* CORES */
 .total{color:var(--gold)}
 .entrada{color:var(--green)}
 .saida{color:var(--red)}
 
-/* LISTA */
-.list{
-  margin-top:16px;
-  padding:0 16px 24px;
+/* GRAFICO */
+.chart-box{
+  margin:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px;
+}
+.chart-box h3{
+  font-size:13px;
+  margin-bottom:8px;
+  color:var(--muted);
 }
 
+/* LISTA */
+.list{
+  padding:0 16px 24px;
+}
 .list h3{
   font-size:14px;
   margin-bottom:8px;
 }
-
 .item{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:12px 14px;
   background:var(--card);
   border:1px solid var(--border);
   border-radius:14px;
+  padding:12px 14px;
   margin-bottom:8px;
 }
-
-.item .info{
-  display:flex;
-  flex-direction:column;
-}
-
-.item .info strong{
+.item strong{
   font-size:13px;
 }
-
-.item .info span{
+.item span{
   font-size:11px;
   color:var(--muted);
 }
-
 .item .valor{
   font-weight:700;
-}
-
-/* FOOTER SPACE (respiro do iframe) */
-.footer-space{
-  height:20px;
 }
 </style>
 </head>
@@ -158,37 +154,37 @@ html,body{
 <!-- HEADER -->
 <div class="header">
   <h2>Dashboard Financeiro</h2>
-  <span>Relatório consolidado por empresa</span>
+  <span>Evolução de ganhos e gastos</span>
 </div>
 
 <!-- FILTROS -->
 <div class="filters">
-  <select>
-    <option>Todas as empresas</option>
-    <option>Grupo DV</option>
-    <option>Empresa A</option>
-    <option>Empresa B</option>
-  </select>
-
-  <input type="month">
+  <input type="date" id="dataInicio">
+  <input type="date" id="dataFim">
 </div>
 
 <!-- CARDS -->
 <div class="cards">
   <div class="card">
     <div class="label">Faturamento Total</div>
-    <div class="value total">R$ 125.430,00</div>
+    <div class="value total" id="total">R$ 0,00</div>
   </div>
 
   <div class="card">
     <div class="label">Entradas</div>
-    <div class="value entrada">R$ 162.800,00</div>
+    <div class="value entrada" id="entradas">R$ 0,00</div>
   </div>
 
   <div class="card">
     <div class="label">Saídas</div>
-    <div class="value saida">R$ 37.370,00</div>
+    <div class="value saida" id="saidas">R$ 0,00</div>
   </div>
+</div>
+
+<!-- GRAFICO -->
+<div class="chart-box">
+  <h3>Evolução no período</h3>
+  <canvas id="grafico" height="180"></canvas>
 </div>
 
 <!-- LISTA -->
@@ -196,31 +192,122 @@ html,body{
   <h3>Resumo por empresa</h3>
 
   <div class="item">
-    <div class="info">
-      <strong>Grupo DV</strong>
-      <span>Período atual</span>
+    <div>
+      <strong>Grupo DV</strong><br>
+      <span>Período selecionado</span>
     </div>
     <div class="valor total">R$ 58.200,00</div>
   </div>
 
   <div class="item">
-    <div class="info">
-      <strong>Empresa A</strong>
-      <span>Período atual</span>
+    <div>
+      <strong>Empresa A</strong><br>
+      <span>Período selecionado</span>
     </div>
     <div class="valor entrada">R$ 42.100,00</div>
   </div>
 
   <div class="item">
-    <div class="info">
-      <strong>Empresa B</strong>
-      <span>Período atual</span>
+    <div>
+      <strong>Empresa B</strong><br>
+      <span>Período selecionado</span>
     </div>
     <div class="valor saida">R$ 20.900,00</div>
   </div>
 </div>
 
-<div class="footer-space"></div>
+<script>
+/* ====== DADOS MOCK (SUPABASE ENTRA AQUI DEPOIS) ====== */
+const dados = [
+  { data:'2024-06-01', entrada:1200, saida:400 },
+  { data:'2024-06-02', entrada:1800, saida:600 },
+  { data:'2024-06-03', entrada:1500, saida:300 },
+  { data:'2024-06-04', entrada:2200, saida:900 },
+  { data:'2024-06-05', entrada:2600, saida:1100 }
+];
+
+/* ====== FILTRO ====== */
+function filtrar(){
+  const ini = dataInicio.value;
+  const fim = dataFim.value;
+
+  const filtrado = dados.filter(d =>
+    (!ini || d.data >= ini) &&
+    (!fim || d.data <= fim)
+  );
+
+  atualizarDashboard(filtrado);
+}
+
+/* ====== DASHBOARD ====== */
+let chart;
+
+function atualizarDashboard(lista){
+  let totalEntradas = 0;
+  let totalSaidas = 0;
+
+  const labels = [];
+  const entradas = [];
+  const saidas = [];
+
+  lista.forEach(d=>{
+    totalEntradas += d.entrada;
+    totalSaidas += d.saida;
+    labels.push(d.data.split('-').reverse().join('/'));
+    entradas.push(d.entrada);
+    saidas.push(d.saida);
+  });
+
+  total.innerText = `R$ ${(totalEntradas - totalSaidas).toLocaleString('pt-BR')}`;
+  entradasEl.innerText = `R$ ${totalEntradas.toLocaleString('pt-BR')}`;
+  saidasEl.innerText = `R$ ${totalSaidas.toLocaleString('pt-BR')}`;
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(grafico, {
+    type:'line',
+    data:{
+      labels,
+      datasets:[
+        {
+          label:'Entradas',
+          data:entradas,
+          borderColor:'#22c55e',
+          backgroundColor:'rgba(34,197,94,.15)',
+          tension:.4
+        },
+        {
+          label:'Saídas',
+          data:saidas,
+          borderColor:'#ef4444',
+          backgroundColor:'rgba(239,68,68,.15)',
+          tension:.4
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      plugins:{
+        legend:{labels:{color:'#f5f5f5'}}
+      },
+      scales:{
+        x:{ticks:{color:'#9ca3af'}},
+        y:{ticks:{color:'#9ca3af'}}
+      }
+    }
+  });
+}
+
+/* ====== INIT ====== */
+const total = document.getElementById('total');
+const entradasEl = document.getElementById('entradas');
+const saidasEl = document.getElementById('saidas');
+
+dataInicio.addEventListener('change', filtrar);
+dataFim.addEventListener('change', filtrar);
+
+atualizarDashboard(dados);
+</script>
 
 </body>
 </html>
