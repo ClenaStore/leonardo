@@ -2,14 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-
 <title>Resumo de Vendas</title>
 
-<meta name="viewport"
-      content="width=device-width,
-               initial-scale=1,
-               maximum-scale=1,
-               user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -26,60 +21,23 @@
   --muted:#9ca3af;
 }
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
-html,body{
-  width:100%;
-  height:100%;
-  background:var(--bg);
-  color:var(--text);
-  overflow:auto;
-  scrollbar-width:none;
-}
-body::-webkit-scrollbar{display:none}
-
-/* HEADER */
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text)}
 .header{padding:16px}
 .header h2{font-size:18px;font-weight:800}
 .header span{font-size:12px;color:var(--muted)}
 
-/* CARDS */
-.cards{
-  padding:0 16px;
-  display:grid;
-  gap:12px;
-}
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:16px;
-}
+.cards{padding:0 16px;display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px}
 .card .label{font-size:12px;color:var(--muted)}
 .card .value{font-size:22px;font-weight:800;margin-top:6px}
 .gold{color:var(--gold)}
 .green{color:var(--green)}
 
-/* GRAFICO */
-.chart-box{
-  margin:16px;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:12px;
-}
-.chart-box h3{
-  font-size:13px;
-  color:var(--muted);
-  margin-bottom:8px;
-}
+.chart-box{margin:16px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:12px}
+.chart-box h3{font-size:13px;color:var(--muted);margin-bottom:8px}
 
-/* LISTA */
 .lista{padding:0 16px 24px}
-.item{
-  display:flex;
-  justify-content:space-between;
-  padding:10px 0;
-  border-bottom:1px dashed var(--border);
-}
+.item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--border)}
 .item span{font-size:13px}
 </style>
 </head>
@@ -117,21 +75,41 @@ body::-webkit-scrollbar{display:none}
 
 <script>
 /* ================= SUPABASE ================= */
-const sb = supabase.createClient(
+const { createClient } = supabase;
+const sb = createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ================= FILTROS GLOBAIS ================= */
+/* ================= AGRUPAMENTO ================= */
+const categoriasAgrupadas = {
+  "crédito": ["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
+  "débito": ["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
+  "pix": ["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
+  "online": ["pagamento online","pagamentos online","refeicao","cart alimentacao"],
+  "consumo interno": ["funcionario","convenio empresa","consumo funcionarios","consumo musicos"],
+  "boleto": ["boleto"],
+  "crediário": ["crediario","crediario clientes"],
+  "voucher": ["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa"],
+  "dinheiro": ["dinheiro","pgto online dinheiro"],
+  "bonificação": ["bonificacao"],
+  "catálogo delivery": ["catalogo delivery","catálogo delivery"],
+  "consumo sócio": ["socio","consumo sócio","consumo socio"],
+  "marketing": ["marketing"],
+  "transferência bancária": ["transferencia bancar","transferencia bancaria"],
+  "erros garçom": ["erros garcons"],
+  "sem faturamento": ["sem faturamento"],
+  "outros": []
+};
+
+/* ================= FILTROS ================= */
 const EMPRESA = localStorage.getItem("EMPRESA_ATIVA") || "todas";
 const DATA_INICIO = localStorage.getItem("DATA_INICIO");
 const DATA_FIM = localStorage.getItem("DATA_FIM");
 
-/* ================= UTIL ================= */
 const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
-const fmtBR = iso => iso.split("-").reverse().join("/");
+const fmtBR = d => d.split("-").reverse().join("/");
 
-/* ================= SUBTÍTULO ================= */
 document.getElementById("subtitulo").innerText =
   `${EMPRESA} • ${DATA_INICIO ? fmtBR(DATA_INICIO) : "—"} até ${DATA_FIM ? fmtBR(DATA_FIM) : "—"}`;
 
@@ -139,91 +117,73 @@ let chart;
 
 /* ================= LOAD ================= */
 async function carregarDados(){
-  let query = sb
-    .from("resumo_entradas")
+  let q = sb.from("resumo_entradas")
     .select("data_lancamento, modalidade, valor, empresa")
     .order("data_lancamento",{ascending:true});
 
-  if(EMPRESA !== "todas"){
-    query = query.eq("empresa", EMPRESA);
-  }
-  if(DATA_INICIO){
-    query = query.gte("data_lancamento", DATA_INICIO);
-  }
-  if(DATA_FIM){
-    query = query.lte("data_lancamento", DATA_FIM);
-  }
+  if(EMPRESA !== "todas") q = q.eq("empresa",EMPRESA);
+  if(DATA_INICIO) q = q.gte("data_lancamento",DATA_INICIO);
+  if(DATA_FIM) q = q.lte("data_lancamento",DATA_FIM);
 
-  const { data, error } = await query;
-
-  if(error){
-    console.error(error);
-    alert("Erro ao carregar dados");
-    return;
-  }
-
+  const { data } = await q;
   montarResumo(data || []);
+}
+
+/* ================= NORMALIZAR ================= */
+function normalizarCategoria(mod){
+  const m = mod.toLowerCase();
+  for(const [cat,keys] of Object.entries(categoriasAgrupadas)){
+    if(keys.some(k => m.includes(k))) return cat;
+  }
+  return "outros";
 }
 
 /* ================= RESUMO ================= */
 function montarResumo(lista){
   let total = 0;
   const porDia = {};
-  const porModalidade = {};
+  const porCategoria = {};
 
   lista.forEach(l=>{
-    total += Number(l.valor);
+    const v = Number(l.valor);
+    const cat = normalizarCategoria(l.modalidade);
 
-    porDia[l.data_lancamento] =
-      (porDia[l.data_lancamento] || 0) + Number(l.valor);
-
-    porModalidade[l.modalidade] =
-      (porModalidade[l.modalidade] || 0) + Number(l.valor);
+    total += v;
+    porDia[l.data_lancamento] = (porDia[l.data_lancamento] || 0) + v;
+    porCategoria[cat] = (porCategoria[cat] || 0) + v;
   });
 
-  const diasUnicos = Object.keys(porDia).length;
+  const dias = Object.keys(porDia).length;
 
   totalVendas.innerText = `R$ ${BRL(total)}`;
-  quantidade.innerText = diasUnicos;
-  ticketMedio.innerText =
-    diasUnicos ? `R$ ${BRL(total / diasUnicos)}` : "R$ 0,00";
-
-  /* ===== GRAFICO ===== */
-  const labels = Object.keys(porDia).map(fmtBR);
-  const valores = Object.values(porDia);
+  quantidade.innerText = dias;
+  ticketMedio.innerText = dias ? `R$ ${BRL(total/dias)}` : "R$ 0,00";
 
   if(chart) chart.destroy();
   chart = new Chart(grafico,{
     type:"line",
     data:{
-      labels,
+      labels:Object.keys(porDia).map(fmtBR),
       datasets:[{
-        data:valores,
+        data:Object.values(porDia),
         borderColor:"#d4af37",
         backgroundColor:"rgba(212,175,55,.15)",
         tension:.4
       }]
     },
-    options:{
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:"#9ca3af"}},
-        y:{ticks:{color:"#9ca3af"}}
-      }
-    }
+    options:{plugins:{legend:{display:false}}}
   });
 
-  /* ===== LISTA POR MODALIDADE ===== */
   listaCategorias.innerHTML = "";
-  Object.entries(porModalidade).forEach(([m,v])=>{
-    const div = document.createElement("div");
-    div.className = "item";
-    div.innerHTML = `<span>${m}</span><span>R$ ${BRL(v)}</span>`;
-    listaCategorias.appendChild(div);
+  Object.entries(porCategoria).forEach(([c,v])=>{
+    listaCategorias.innerHTML += `
+      <div class="item">
+        <span>${c}</span>
+        <span>R$ ${BRL(v)}</span>
+      </div>`;
   });
 }
 
-/* INIT */
 carregarDados();
 </script>
 
