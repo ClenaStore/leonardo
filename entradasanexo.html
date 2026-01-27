@@ -199,7 +199,6 @@ async function processarArquivos(){
     await processarArquivo(file, data, preview);
   }
 }
-
 function processarArquivo(file, data, preview){
   return new Promise(resolve=>{
     const reader = new FileReader();
@@ -239,10 +238,12 @@ function processarArquivo(file, data, preview){
 
       let total = 0;
       const modalidadesHTML = [];
+      let empresaExibicao = "";
 
       Object.entries(mapa).forEach(([k,v])=>{
         const [empresa,modalidade,caixa] = k.split("|");
 
+        empresaExibicao = empresa;
         total += v;
 
         modalidadesHTML.push(
@@ -264,12 +265,14 @@ function processarArquivo(file, data, preview){
       preview.innerHTML += `
         <div class="file-box">
           <strong>${file.name}</strong><br>
+          <span style="font-size:12px;color:#94a3b8">
+            ${empresaExibicao}
+          </span><br>
+          <strong style="font-size:14px">
+            Total: R$ ${total.toFixed(2)}
+          </strong>
 
-          <div class="total-badge">
-            R$<br>${total.toFixed(2)}
-          </div>
-
-          <div class="modalidades">
+          <div class="modalidades" style="margin-top:6px">
             ${modalidadesHTML.join("")}
           </div>
         </div>
