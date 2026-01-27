@@ -36,12 +36,12 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <div class="card">
-  <h3>Pré-visualização (por empresa)</h3>
+  <h3>Pré-visualização</h3>
   <div id="preview" class="preview">Nenhum arquivo processado.</div>
 </div>
 
 <div class="card">
-  <button onclick="salvarTudo()">Salvar Tudo no Sistema</button>
+  <button onclick="salvarTudo()">Salvar no Sistema</button>
   <div id="msg"></div>
 </div>
 
@@ -58,14 +58,14 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   document.getElementById("data").value = d.toISOString().split("T")[0];
 })();
 
-/* ================= AGRUPAMENTO ================= */
+/* ================= MAPA DE MODALIDADES ================= */
 const categoriasAgrupadas = {
   "CRÉDITO": ["credito", "cartao credito", "credito tef", "credito pos", "credito delivery"],
   "DÉBITO": ["debito", "cartao debito", "debito tef", "debito pos"],
   "PIX": ["pix", "pix tef", "pix pos", "qrcode", "pix cnpj"],
   "DINHEIRO": ["dinheiro"],
-  "ONLINE": ["pagamento online", "pgto online", "online"],
-  "CONSUMO INTERNO": ["funcionario", "consumo"],
+  "ONLINE": ["online", "pgto online"],
+  "CONSUMO INTERNO": ["consumo", "funcionario"],
   "VOUCHER": ["voucher"],
   "CREDIÁRIO": ["crediario"],
   "OUTROS": []
@@ -83,7 +83,7 @@ function agruparModalidade(txt){
 }
 
 /* ================= VAR ================= */
-let todosRegistros = [];
+let registros = [];
 
 /* ================= PROCESSAR ================= */
 async function processarArquivos(){
@@ -96,7 +96,7 @@ async function processarArquivos(){
     return;
   }
 
-  todosRegistros = [];
+  registros = [];
   preview.innerHTML = "";
 
   for(const file of files){
@@ -113,36 +113,38 @@ function processarArquivo(file, data, preview){
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws,{header:1});
 
+      let empresaDetectada = detectarEmpresaNormal(rows);
       let caixaAtual = null;
-      let porEmpresa = {
-        "EMPORIO MERCATTO": [],
-        "RESTAURANTE MERCATTO": []
-      };
+
+      const buffer = [];
 
       rows.forEach(l=>{
         const col0 = l[0];
         const desc = l[1];
         const valRaw = l[2];
 
-        // Detecta CAIXA
-        if(typeof col0 === "string" && col0.includes("Caixa")){
+        if(typeof col0 === "string" && col0.toLowerCase().includes("caixa")){
           caixaAtual = parseInt(col0.replace(/\D/g,""));
           return;
         }
 
-        // Ignora totais
-        if(typeof desc === "string" && desc.includes("Total")) return;
-
         const valor = Number(String(valRaw).replace(".","").replace(",","."));
-        if(!caixaAtual || !desc || valor <= 0) return;
+        if(!desc || valor <= 0) return;
 
-        const empresa = caixaAtual <= 5
-          ? "EMPORIO MERCATTO"
-          : "RESTAURANTE MERCATTO";
+        let empresaFinal = empresaDetectada;
 
-        porEmpresa[empresa].push({
-          empresa,
-          data,
+        // REGRA MERCATTO
+        if(!empresaDetectada){
+          if(!caixaAtual) return;
+          empresaFinal = caixaAtual <= 5
+            ? "EMPORIO MERCATTO"
+            : "RESTAURANTE MERCATTO";
+        }
+
+        buffer.push({
+          data_lancamento: data,
+          empresa: empresaFinal,
+          caixa: caixaAtual,
           modalidade: agruparModalidade(desc),
           valor,
           origem: "IMPORTACAO_EXCEL",
@@ -150,19 +152,23 @@ function processarArquivo(file, data, preview){
         });
       });
 
-      Object.entries(porEmpresa).forEach(([empresa, regs])=>{
-        if(!regs.length) return;
+      registros.push(...buffer);
 
-        todosRegistros.push(...regs);
-
-        preview.innerHTML += `
-          <div class="file-box">
-            <strong>Arquivo:</strong> ${file.name}<br>
-            <strong>Empresa:</strong> ${empresa}<br>
-            ${regs.map(r=>`• ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
-          </div>
-        `;
+      const agrupado = {};
+      buffer.forEach(r=>{
+        const k = `${r.empresa}_${r.modalidade}`;
+        agrupado[k] = (agrupado[k]||0) + r.valor;
       });
+
+      preview.innerHTML += `
+        <div class="file-box">
+          <strong>Arquivo:</strong> ${file.name}<br>
+          ${Object.entries(agrupado).map(([k,v])=>{
+            const [emp,mod] = k.split("_");
+            return `• ${emp} — ${mod}: R$ ${v.toFixed(2)}`;
+          }).join("<br>")}
+        </div>
+      `;
 
       resolve();
     };
@@ -171,14 +177,23 @@ function processarArquivo(file, data, preview){
   });
 }
 
+function detectarEmpresaNormal(rows){
+  const linha = rows.find(r =>
+    typeof r[0] === "string" &&
+    r[0].toLowerCase().includes("loja")
+  );
+  if(!linha) return null;
+  return linha[0].split(":").pop().trim().toUpperCase();
+}
+
 /* ================= SALVAR ================= */
 async function salvarTudo(){
-  if(!todosRegistros.length){
+  if(!registros.length){
     alert("Nada para salvar");
     return;
   }
 
-  const { error } = await sb.from("resumo_entradas").insert(todosRegistros);
+  const { error } = await sb.from("resumo_entradas").insert(registros);
 
   document.getElementById("msg").innerHTML = error
     ? `<div class="error">Erro ao salvar</div>`
