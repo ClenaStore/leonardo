@@ -21,47 +21,13 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 .success{color:#22c55e}
 .error{color:#ef4444}
 
-/* MODAL */
-.modal{
-  position:fixed; inset:0;
-  background:rgba(0,0,0,.85);
-  display:none; align-items:center; justify-content:center;
-  z-index:100;
-}
-.modal-content{
-  background:#151515;
-  border-radius:20px;
-  padding:16px;
-  width:100%;
-  max-width:540px;
-  max-height:85vh;
-  overflow:auto;
-  animation:fadeUp .25s ease;
-}
-@keyframes fadeUp{
-  from{transform:translateY(20px);opacity:0}
-  to{transform:none;opacity:1}
-}
-.modal-header{
-  display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:10px
-}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-content{background:#151515;border-radius:20px;padding:16px;width:100%;max-width:540px;max-height:85vh;overflow:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center}
 .close{cursor:pointer;font-size:20px}
-.item{
-  border:1px solid #242424;
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:10px
-}
-.item button{
-  background:#ef4444;color:#fff;margin-top:8px
-}
-.filters{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-bottom:12px
-}
+.item{border:1px solid #242424;border-radius:14px;padding:12px;margin-bottom:10px}
+.item button{background:#ef4444;color:#fff;margin-top:8px}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
 </style>
 </head>
 
@@ -88,7 +54,6 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
   <div id="msg"></div>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -108,24 +73,25 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <script>
-const sb = supabase.createClient(
+/* 🔥 CORREÇÃO CRÍTICA */
+const { createClient } = supabase;
+const sb = createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
 const uuid = () => crypto.randomUUID();
-
 let registros = [];
 let importIdAtual = null;
 
-// data padrão = ontem
+/* data padrão = ontem */
 (() => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   document.getElementById("data").value = d.toISOString().split("T")[0];
 })();
 
-/* ================= IMPORTAÇÃO ================= */
+/* ===== IMPORTAÇÃO ===== */
 
 async function processarArquivos(){
   const files = document.getElementById("files").files;
@@ -182,15 +148,15 @@ function processarArquivo(file, data, preview){
           import_id: importIdAtual,
           data_lancamento: data,
           empresa,
-          caixa: Number(caixa)||null,
+          caixa:Number(caixa)||null,
           modalidade,
-          valor: v,
+          valor:v,
           origem:"IMPORTACAO_EXCEL",
           arquivo_origem:file.name
         });
       });
 
-      preview.innerHTML += `<div class="file-box"><strong>${file.name}</strong> (${registros.length} registros)</div>`;
+      preview.innerHTML += `<div class="file-box"><strong>${file.name}</strong></div>`;
       resolve();
     };
 
@@ -211,7 +177,7 @@ async function salvarTudo(){
     : `<div class="success">Importação concluída</div>`;
 }
 
-/* ================= MODAL ================= */
+/* ===== MODAL ===== */
 
 function abrirModal(){ document.getElementById("modal").style.display="flex"; listarImportacoes(); }
 function fecharModal(){ document.getElementById("modal").style.display="none"; }
@@ -229,23 +195,20 @@ async function listarImportacoes(){
 
   const { data:rows } = await q;
 
-  const grupos = {};
-  rows.forEach(r=>{
-    grupos[r.import_id] = r;
-  });
-
   const lista = document.getElementById("lista");
   lista.innerHTML = "";
+
+  const grupos = {};
+  rows.forEach(r => grupos[r.import_id] = r);
 
   Object.values(grupos).forEach(g=>{
     lista.innerHTML += `
       <div class="item">
         <strong>${g.empresa}</strong><br>
-        Data: ${g.data_lancamento}<br>
-        Arquivo: ${g.arquivo_origem}
+        ${g.data_lancamento}<br>
+        ${g.arquivo_origem}
         <button onclick="excluirImportacao('${g.import_id}')">Excluir Importação</button>
-      </div>
-    `;
+      </div>`;
   });
 
   const empresas = [...new Set(rows.map(r=>r.empresa))];
@@ -255,7 +218,7 @@ async function listarImportacoes(){
 }
 
 async function excluirImportacao(importId){
-  if(!confirm("Excluir TODA a importação selecionada?")) return;
+  if(!confirm("Excluir TODA a importação?")) return;
   await sb.from("resumo_entradas").delete().eq("import_id",importId);
   listarImportacoes();
 }
