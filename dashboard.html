@@ -12,6 +12,12 @@
                user-scalable=no">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<!-- FLATPICKR (DATE RANGE) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+<!-- CHART -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
@@ -28,12 +34,7 @@
   --muted:#9ca3af;
 }
 
-*{
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
-  font-family:Inter,system-ui;
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
 
 html,body{
   width:100%;
@@ -46,17 +47,9 @@ html,body{
 body::-webkit-scrollbar{display:none}
 
 /* HEADER */
-.header{
-  padding:16px;
-}
-.header h2{
-  font-size:18px;
-  font-weight:800;
-}
-.header span{
-  font-size:12px;
-  color:var(--muted);
-}
+.header{padding:16px}
+.header h2{font-size:18px;font-weight:800}
+.header span{font-size:12px;color:var(--muted)}
 
 /* FILTROS */
 .filters{
@@ -66,37 +59,13 @@ body::-webkit-scrollbar{display:none}
   gap:10px;
 }
 
-.filters select{
+select,input{
   padding:12px;
   border-radius:12px;
   background:#0b0b0b;
   border:1px solid var(--border);
   color:var(--text);
-}
-
-/* PERÍODO (UM BLOCO) */
-.periodo{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-}
-
-.periodo input{
-  padding:12px;
-  border-radius:12px;
-  background:#0b0b0b;
-  border:1px solid var(--border);
-  color:var(--text);
-}
-
-.btn-aplicar{
-  padding:12px;
-  border-radius:14px;
-  border:none;
-  font-weight:800;
-  background:var(--gold);
-  color:#000;
-  cursor:pointer;
+  font-size:13px;
 }
 
 /* GRAFICO */
@@ -107,11 +76,7 @@ body::-webkit-scrollbar{display:none}
   border-radius:18px;
   padding:12px;
 }
-.chart-box h3{
-  font-size:13px;
-  margin-bottom:8px;
-  color:var(--muted);
-}
+.chart-box h3{font-size:13px;color:var(--muted);margin-bottom:8px}
 
 /* CARDS */
 .cards{
@@ -126,40 +91,11 @@ body::-webkit-scrollbar{display:none}
   border-radius:18px;
   padding:16px;
 }
-.card .label{
-  font-size:12px;
-  color:var(--muted);
-}
-.card .value{
-  font-size:22px;
-  font-weight:800;
-  margin-top:6px;
-}
+.card .label{font-size:12px;color:var(--muted)}
+.card .value{font-size:22px;font-weight:800;margin-top:6px}
 .total{color:var(--gold)}
 .entrada{color:var(--green)}
 .saida{color:var(--red)}
-
-/* LISTA */
-.list{
-  padding:16px;
-}
-.list h3{
-  font-size:14px;
-  margin-bottom:8px;
-}
-.item{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:14px;
-  padding:12px 14px;
-  margin-bottom:8px;
-}
-.item strong{font-size:13px}
-.item span{font-size:11px;color:var(--muted)}
-.item .valor{font-weight:700}
 </style>
 </head>
 
@@ -174,6 +110,7 @@ body::-webkit-scrollbar{display:none}
 <!-- FILTROS -->
 <div class="filters">
 
+  <!-- EMPRESA (INSTANTÂNEO + SALVO) -->
   <select id="empresa">
     <option value="todas">Todas as empresas</option>
     <option value="Grupo DV">Grupo DV</option>
@@ -181,15 +118,11 @@ body::-webkit-scrollbar{display:none}
     <option value="Empresa B">Empresa B</option>
   </select>
 
-  <div class="periodo">
-    <input type="date" id="dataInicio">
-    <input type="date" id="dataFim">
-  </div>
-
-  <button class="btn-aplicar" onclick="aplicarFiltros()">Aplicar filtros</button>
+  <!-- PERÍODO (UM ÚNICO CALENDÁRIO) -->
+  <input id="periodo" placeholder="Selecione o período">
 </div>
 
-<!-- GRAFICO (LOGO ABAIXO DOS FILTROS) -->
+<!-- GRAFICO -->
 <div class="chart-box">
   <h3>Evolução de ganhos e gastos</h3>
   <canvas id="grafico" height="180"></canvas>
@@ -213,21 +146,8 @@ body::-webkit-scrollbar{display:none}
   </div>
 </div>
 
-<!-- LISTA -->
-<div class="list">
-  <h3>Resumo por empresa</h3>
-
-  <div class="item">
-    <div>
-      <strong>Grupo DV</strong><br>
-      <span>Período filtrado</span>
-    </div>
-    <div class="valor total">R$ 58.200,00</div>
-  </div>
-</div>
-
 <script>
-/* ===== MOCK DE DADOS (SUPABASE ENTRA DEPOIS) ===== */
+/* ===== MOCK (SUPABASE DEPOIS) ===== */
 const dados = [
   {empresa:'Grupo DV', data:'2024-06-01', entrada:1200, saida:400},
   {empresa:'Grupo DV', data:'2024-06-02', entrada:1800, saida:600},
@@ -237,75 +157,90 @@ const dados = [
 ];
 
 let chart;
+let dataInicio = null;
+let dataFim = null;
 
-/* ===== APLICA FILTROS ===== */
+/* ===== EMPRESA GLOBAL ===== */
+const empresaSelect = document.getElementById("empresa");
+const empresaSalva = localStorage.getItem("EMPRESA_ATIVA");
+
+if(empresaSalva){
+  empresaSelect.value = empresaSalva;
+}
+
+empresaSelect.addEventListener("change", ()=>{
+  localStorage.setItem("EMPRESA_ATIVA", empresaSelect.value);
+  aplicarFiltros();
+});
+
+/* ===== CALENDÁRIO ÚNICO (RANGE) ===== */
+flatpickr("#periodo",{
+  mode:"range",
+  dateFormat:"Y-m-d",
+  locale:"pt",
+  onClose:(datas)=>{
+    if(datas.length === 2){
+      dataInicio = datas[0].toISOString().split("T")[0];
+      dataFim = datas[1].toISOString().split("T")[0];
+      aplicarFiltros();
+    }
+  }
+});
+
+/* ===== FILTRO ===== */
 function aplicarFiltros(){
-  const emp = empresa.value;
-  const ini = dataInicio.value;
-  const fim = dataFim.value;
+  const emp = empresaSelect.value;
 
   const filtrado = dados.filter(d =>
-    (emp === 'todas' || d.empresa === emp) &&
-    (!ini || d.data >= ini) &&
-    (!fim || d.data <= fim)
+    (emp === "todas" || d.empresa === emp) &&
+    (!dataInicio || d.data >= dataInicio) &&
+    (!dataFim || d.data <= dataFim)
   );
 
   atualizarDashboard(filtrado);
 }
 
-/* ===== ATUALIZA DASHBOARD ===== */
+/* ===== DASHBOARD ===== */
 function atualizarDashboard(lista){
-  let totalEntradas = 0;
-  let totalSaidas = 0;
-
-  const labels = [];
-  const entradas = [];
-  const saidas = [];
+  let ent = 0, sai = 0;
+  const labels=[], entradas=[], saidas=[];
 
   lista.forEach(d=>{
-    totalEntradas += d.entrada;
-    totalSaidas += d.saida;
-    labels.push(d.data.split('-').reverse().join('/'));
+    ent += d.entrada;
+    sai += d.saida;
+    labels.push(d.data.split("-").reverse().join("/"));
     entradas.push(d.entrada);
     saidas.push(d.saida);
   });
 
-  resultado.innerText = `R$ ${(totalEntradas - totalSaidas).toLocaleString('pt-BR')}`;
-  entradas.innerText = `R$ ${totalEntradas.toLocaleString('pt-BR')}`;
-  saidas.innerText = `R$ ${totalSaidas.toLocaleString('pt-BR')}`;
+  resultado.innerText = `R$ ${(ent-sai).toLocaleString("pt-BR")}`;
+  entradasEl.innerText = `R$ ${ent.toLocaleString("pt-BR")}`;
+  saidasEl.innerText = `R$ ${sai.toLocaleString("pt-BR")}`;
 
   if(chart) chart.destroy();
 
   chart = new Chart(grafico,{
-    type:'line',
+    type:"line",
     data:{
       labels,
       datasets:[
-        {
-          label:'Entradas',
-          data:entradas,
-          borderColor:'#22c55e',
-          backgroundColor:'rgba(34,197,94,.15)',
-          tension:.4
-        },
-        {
-          label:'Saídas',
-          data:saidas,
-          borderColor:'#ef4444',
-          backgroundColor:'rgba(239,68,68,.15)',
-          tension:.4
-        }
+        {label:"Entradas",data:entradas,borderColor:"#22c55e",tension:.4},
+        {label:"Saídas",data:saidas,borderColor:"#ef4444",tension:.4}
       ]
     },
     options:{
-      plugins:{legend:{labels:{color:'#f5f5f5'}}},
+      plugins:{legend:{labels:{color:"#f5f5f5"}}},
       scales:{
-        x:{ticks:{color:'#9ca3af'}},
-        y:{ticks:{color:'#9ca3af'}}
+        x:{ticks:{color:"#9ca3af"}},
+        y:{ticks:{color:"#9ca3af"}}
       }
     }
   });
 }
+
+const resultado=document.getElementById("resultado");
+const entradasEl=document.getElementById("entradas");
+const saidasEl=document.getElementById("saidas");
 
 /* INIT */
 aplicarFiltros();
