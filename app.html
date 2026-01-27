@@ -17,7 +17,6 @@
 <style>
 :root{
   --bg:#0b0b0b;
-  --card:#151515;
   --border:#242424;
   --text:#f5f5f5;
   --muted:#9ca3af;
@@ -58,7 +57,7 @@ html,body{
 .topbar h1{
   font-size:16px;
   font-weight:800;
-  letter-spacing:.5px;
+  letter-spacing:.6px;
 }
 
 /* AVATAR */
@@ -66,11 +65,10 @@ html,body{
   width:36px;
   height:36px;
   border-radius:50%;
-  background:#222;
-  border:2px solid var(--gold);
+  background-image:url('leo.png');
   background-size:cover;
   background-position:center;
-  cursor:pointer;
+  border:2px solid var(--gold);
 }
 
 /* CONTEÚDO */
@@ -125,7 +123,7 @@ iframe{
 <!-- TOPO -->
 <div class="topbar">
   <h1>GRUPO DV</h1>
-  <div class="avatar" id="avatar"></div>
+  <div class="avatar"></div>
 </div>
 
 <!-- IFRAME -->
@@ -163,34 +161,20 @@ iframe{
 
 <script>
 const frame = document.getElementById("frame");
+let paginaAtual = "dashboard.html";
 
 function go(el, page){
+  if(paginaAtual === page) return; // NÃO recarrega
+
+  paginaAtual = page;
+
   document.querySelectorAll(".nav-item")
     .forEach(i => i.classList.remove("active"));
 
   el.classList.add("active");
 
-  if (frame.src.includes(page)) return;
-
   frame.src = page;
 }
-
-/* FOTO DE PERFIL LOCAL (opcional) */
-avatar.addEventListener("click", () => {
-  const input = document.createElement("input");
-  input.type = "file";
-  input.accept = "image/*";
-  input.onchange = e => {
-    const file = e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      avatar.style.backgroundImage = `url(${reader.result})`;
-    };
-    reader.readAsDataURL(file);
-  };
-  input.click();
-});
 </script>
 
 </body>
