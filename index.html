@@ -12,7 +12,7 @@
   gtag('config', 'G-T97MS35TJ6');
 </script>
 
-<title>App Cliente</title>
+<title>Financeiro • App</title>
 
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
@@ -32,18 +32,10 @@
   --muted:#9ca3af;
   --danger:#dc2626;
   --topbar-h:56px;
-  --navbar-h:68px;
+  --navbar-h:74px;
 }
-
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
-
-html,body{
-  width:100%;
-  height:100%;
-  background:var(--bg);
-  overflow:hidden;
-  color:var(--text);
-}
+html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;color:var(--text)}
 
 /* TOPBAR */
 .topbar{
@@ -52,27 +44,18 @@ html,body{
   background:linear-gradient(180deg,#0b0b0b,#111);
   border-bottom:1px solid var(--border);
   padding:0 16px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;
   z-index:10;
 }
-.topbar h1{
-  font-size:16px;
-  font-weight:800;
-  color:var(--primary);
-  letter-spacing:.4px;
-}
+.topbar h1{font-size:16px;font-weight:800;color:var(--primary)}
 
 /* AVATAR */
 .avatar{
   width:36px;height:36px;border-radius:50%;
   background:linear-gradient(135deg,#d4af37,#f1d98a);
   display:flex;align-items:center;justify-content:center;
-  color:#000;font-weight:800;
-  cursor:pointer;
-  background-size:cover;
-  background-position:center;
+  color:#000;font-weight:800;cursor:pointer;
+  background-size:cover;background-position:center;
 }
 
 /* CONTENT */
@@ -87,66 +70,38 @@ iframe{width:100%;height:100%;border:none;background:#000}
 
 /* NAVBAR */
 .navbar{
-  position:fixed;
-  bottom:0;left:0;right:0;
+  position:fixed;bottom:0;left:0;right:0;
   height:var(--navbar-h);
   background:linear-gradient(180deg,#111,#0b0b0b);
   border-top:1px solid var(--border);
-  display:flex;
-  justify-content:space-around;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
   align-items:center;
 }
 .nav-item{
-  font-size:11px;
+  font-size:10px;
   color:var(--muted);
   display:flex;
   flex-direction:column;
   align-items:center;
+  justify-content:center;
+  gap:4px;
   cursor:pointer;
 }
 .nav-item i{font-size:22px}
 .nav-item.active{color:var(--primary)}
 
-/* CART */
-.cart-btn{
-  position:relative;
-  width:36px;height:36px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  cursor:pointer;
-}
-.cart-btn i{font-size:22px;color:var(--primary)}
-.cart-badge{
-  position:absolute;
-  top:-4px;
-  right:-6px;
-  background:var(--primary);
-  color:#000;
-  font-size:10px;
-  font-weight:800;
-  padding:2px 6px;
-  border-radius:999px;
-  min-width:18px;
-  display:none;
-}
-
-/* OVERLAY */
-#profileOverlay,
-#confirmOverlay{
-  position:fixed;
-  inset:0;
+/* OVERLAYS */
+#profileOverlay,#confirmOverlay{
+  position:fixed;inset:0;
   background:rgba(0,0,0,.7);
-  display:none;
-  align-items:center;
-  justify-content:center;
+  display:none;align-items:center;justify-content:center;
   z-index:9999;
 }
 
 /* PROFILE MODAL */
 .profile-modal{
-  width:92%;
-  max-width:420px;
+  width:92%;max-width:420px;
   background:var(--card);
   border-radius:26px;
   padding:20px;
@@ -159,84 +114,54 @@ iframe{width:100%;height:100%;border:none;background:#000}
 .profile-img{
   width:90px;height:90px;border-radius:50%;
   background:#222;
-  background-size:cover;
-  background-position:center;
+  background-size:cover;background-position:center;
   margin:0 auto 12px;
   position:relative;
   border:2px solid var(--primary);
 }
 .profile-img .cam{
-  position:absolute;
-  right:-4px;bottom:-4px;
-  width:34px;height:34px;
-  border-radius:50%;
+  position:absolute;right:-4px;bottom:-4px;
+  width:34px;height:34px;border-radius:50%;
   background:linear-gradient(135deg,#d4af37,#f1d98a);
   display:flex;align-items:center;justify-content:center;
-  color:#000;
-  cursor:pointer;
+  color:#000;cursor:pointer;
 }
 
-/* FIELDS */
+/* FORM */
 .field{margin-bottom:10px}
 .field input{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
+  width:100%;padding:12px;border-radius:12px;
   border:1px solid var(--border);
-  background:#0b0b0b;
-  color:var(--text);
+  background:#0b0b0b;color:var(--text);
 }
 .field input::placeholder{color:#777}
-
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
 /* BUTTONS */
 .btn{
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:999px;
-  font-weight:800;
-  cursor:pointer;
+  width:100%;padding:14px;border:none;
+  border-radius:999px;font-weight:800;cursor:pointer;
 }
-.btn-primary{
-  background:linear-gradient(135deg,#d4af37,#f1d98a);
-  color:#000;
-}
+.btn-primary{background:linear-gradient(135deg,#d4af37,#f1d98a);color:#000}
 .btn-danger{background:#2a0e0e;color:#f87171}
 .btn-ghost{background:#1a1a1a;color:#ddd}
 
 /* LOJAS */
 .lojas-wrap{margin-top:14px}
 .lojas-header h4{font-size:14px;color:var(--primary)}
-.lojas-scroll{
-  display:flex;
-  gap:14px;
-  overflow-x:auto;
-  padding-bottom:6px;
-}
+.lojas-scroll{display:flex;gap:14px;overflow-x:auto}
 .loja-card{min-width:90px;text-align:center;cursor:pointer}
 .loja-logo{
-  width:64px;height:64px;
-  border-radius:50%;
-  background:#222;
-  background-size:cover;
-  background-position:center;
-  margin:0 auto 6px;
-  border:2px solid transparent;
+  width:64px;height:64px;border-radius:50%;
+  background:#222;background-size:cover;background-position:center;
+  margin:0 auto 6px;border:2px solid transparent;
 }
 .loja-card.active .loja-logo{border-color:var(--primary)}
-.loja-card span{font-size:11px;font-weight:600}
-
-/* ADD */
 .add-loja{
-  min-width:64px;height:64px;
-  border-radius:50%;
+  min-width:64px;height:64px;border-radius:50%;
   border:1px dashed var(--primary);
   display:flex;align-items:center;justify-content:center;
-  font-size:26px;
-  color:var(--primary);
-  cursor:pointer;
+  font-size:26px;color:var(--primary);cursor:pointer;
 }
 </style>
 </head>
@@ -245,12 +170,8 @@ iframe{width:100%;height:100%;border:none;background:#000}
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <h1 id="nomeLoja">CLENA.COM.BR</h1>
+  <h1 id="nomeLoja">FINANCEIRO</h1>
   <div style="display:flex;align-items:center;gap:14px">
-    <div class="cart-btn" id="cartIcon" onclick="abrirCarrinho()">
-      <i class="ri-shopping-cart-line"></i>
-      <span id="cartCount" class="cart-badge">0</span>
-    </div>
     <div class="avatar" id="avatar" onclick="openProfile()">A</div>
   </div>
 </div>
@@ -259,15 +180,22 @@ iframe{width:100%;height:100%;border:none;background:#000}
   <iframe id="frame"></iframe>
 </div>
 
+<!-- NAVBAR FINANCEIRA -->
 <nav class="navbar">
-  <div class="nav-item active" onclick="go(this,'homeclientes.html')">
-    <i class="ri-home-5-line"></i>Início
+  <div class="nav-item active" onclick="go(this,'dashboard.html')">
+    <i class="ri-dashboard-line"></i>Dashboard
   </div>
-  <div class="nav-item" onclick="go(this,'agendar.html')">
-    <i class="ri-calendar-line"></i>Agendar
+  <div class="nav-item" onclick="go(this,'entradas.html')">
+    <i class="ri-arrow-down-circle-line"></i>Entradas
   </div>
-  <div class="nav-item" onclick="go(this,'agendamentosclientes.html')">
-    <i class="ri-user-line"></i>Meu espaço
+  <div class="nav-item" onclick="go(this,'saidas.html')">
+    <i class="ri-arrow-up-circle-line"></i>Saídas
+  </div>
+  <div class="nav-item" onclick="go(this,'relatorios.html')">
+    <i class="ri-bar-chart-2-line"></i>Relatórios
+  </div>
+  <div class="nav-item" onclick="go(this,'config.html')">
+    <i class="ri-settings-3-line"></i>Config
   </div>
 </nav>
 
@@ -278,578 +206,63 @@ iframe{width:100%;height:100%;border:none;background:#000}
       <div class="cam" onclick="foto.click()"><i class="ri-camera-line"></i></div>
     </div>
     <input type="file" id="foto" hidden accept="image/*">
-
     <div class="field"><input id="pNome" placeholder="Nome"></div>
     <div class="field"><input id="pWhats" placeholder="WhatsApp"></div>
-
-    <div class="row">
-      <div class="field"><input id="pCep" placeholder="CEP"></div>
-      <div class="field"><input id="pNumero" placeholder="Número"></div>
-    </div>
-
-    <div class="field"><input id="pRua" placeholder="Rua"></div>
-
-    <div class="row">
-      <div class="field"><input id="pCidade" placeholder="Cidade"></div>
-      <div class="field"><input id="pUf" placeholder="UF"></div>
-    </div>
-
     <button class="btn btn-primary" onclick="salvarPerfil()">Salvar</button>
-
-    <div class="lojas-wrap">
-      <div class="lojas-header"><h4>Minhas lojas</h4></div>
-      <div class="lojas-scroll" id="lojasScroll"></div>
-    </div>
-
     <button class="btn btn-danger" onclick="sair()">Sair</button>
   </div>
 </div>
 
-<!-- CONFIRM -->
-<div id="confirmOverlay">
-  <div class="profile-modal" style="max-width:300px;text-align:center">
-    <p style="margin-bottom:14px">Remover esta loja?</p>
-    <button class="btn btn-danger" onclick="confirmRemove()">Remover</button>
-    <button class="btn btn-ghost" onclick="closeConfirm()">Cancelar</button>
-  </div>
-</div>
-
-<!-- 🔥 JAVASCRIPT ORIGINAL (SEM ALTERAÇÃO) -->
 <script>
 const sb = supabase.createClient(
   "https://egxjgmzukjyyxmkukwub.supabase.co",
   "sb_publishable_EWwdrLOUk6KDHZGLuh4uRg_QDRtLeFi"
 );
-async function verificarProdutosLoja(lojaId) {
-  if (!lojaId) return;
-
-  const { count, error } = await sb
-    .from("produtos_servicos")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", lojaId)
-    .eq("ativo", true)
-    .eq("tipo", "PRODUTO");
-
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  const nav = document.getElementById("navProdutos");
-
-  if (count > 0) {
-    nav.style.display = "flex";
-  } else {
-    nav.style.display = "none";
-  }
-}
-
 
 const frame = document.getElementById("frame");
-  
 let user, perfil;
-frame.addEventListener("load", () => {
-  if (typeof atualizarBadgeCarrinho === "function") {
-    atualizarBadgeCarrinho();
-  }
-});
 
+/* INIT */
+(async()=>{
+  const { data:{session} } = await sb.auth.getSession();
+  if(!session){ location.href="index.html"; return; }
+  user=session.user;
 
-(async () => {
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    location.href = "index.html";
-    return;
-  }
+  const params=new URLSearchParams(location.search);
+  let lojaId=params.get("l");
 
-  user = session.user;
+  const {data:perfilDB}=await sb.from("clientes_profile").select("*").eq("id",user.id).maybeSingle();
+  perfil=perfilDB || (await sb.from("clientes_profile").insert({id:user.id,email:user.email}).select().single()).data;
 
-  const params = new URLSearchParams(location.search);
-  let lojaId = params.get("l");
-
-  // 🔍 busca perfil
-  const { data: perfilDB } = await sb
-    .from("clientes_profile")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  // 🔥 cria perfil se não existir
-  if (!perfilDB) {
-    const { data: criado } = await sb
-      .from("clientes_profile")
-      .insert({
-        id: user.id,
-        nome: user.user_metadata?.name || user.email,
-        email: user.email,
-        loja_ativa: lojaId
-      })
-      .select()
-      .single();
-
-    perfil = criado;
-  } else {
-    perfil = perfilDB;
+  if(!lojaId && perfil.loja_ativa){
+    lojaId=perfil.loja_ativa;
+    history.replaceState(null,"",`app.html?l=${lojaId}`);
   }
 
-  // 🔑 fallback de loja
-  if (!lojaId && perfil.loja_ativa) {
-    lojaId = perfil.loja_ativa;
-    history.replaceState(null, "", `app.html?l=${lojaId}`);
-  }
+  const {data:lojaTopo}=await sb.from("user_profile").select("negocio").eq("user_id",perfil.loja_ativa).maybeSingle();
+  if(lojaTopo?.negocio) nomeLoja.innerText=lojaTopo.negocio;
 
-  // 🔄 sincroniza loja ativa
-  if (lojaId && lojaId !== perfil.loja_ativa) {
-    await sb.from("clientes_loja").upsert({
-      cliente_id: user.id,
-      loja_id: lojaId
-    });
-
-    await sb.from("clientes_profile")
-      .update({ loja_ativa: lojaId })
-      .eq("id", user.id);
-
-    perfil.loja_ativa = lojaId;
-  }
-
-  // 🔥 ATUALIZA NOME DA LOJA NO TOPO
-  const { data: lojaTopo } = await sb
-    .from("user_profile")
-    .select("negocio")
-    .eq("user_id", perfil.loja_ativa)
-    .maybeSingle();
-
-  if (lojaTopo?.negocio) {
-    nomeLoja.innerText = lojaTopo.negocio;
-  }
-
-  // 🖼️ carrega iframe inicial
-  frame.src = `homeclientes.html?l=${perfil.loja_ativa}&t=${Date.now()}`;
-
-  // 🔥 verifica se tem produtos
-  verificarProdutosLoja(perfil.loja_ativa);
-
-// 👤 carrega perfil
-carregarPerfil();
-
-// 🔥 GARANTE CLIENTE_LOJA SEMPRE DISPONÍVEL
-sincronizarClienteLoja();
-
-// 🛒 ATUALIZA BADGE DO CARRINHO
-atualizarBadgeCarrinho();
-
+  frame.src=`dashboard.html?l=${perfil.loja_ativa}&t=${Date.now()}`;
 })();
 
-function carregarPerfil(){
-  pNome.value = perfil.nome || "";
-  pWhats.value = perfil.whatsapp || "";
-  pCep.value = perfil.cep || "";
-  pRua.value = perfil.rua || "";
-  pNumero.value = perfil.numero || "";
-  pCidade.value = perfil.cidade || "";
-  pUf.value = perfil.uf || "";
-
-  if (perfil.avatar_url) {
-    avatar.style.backgroundImage = `url(${perfil.avatar_url})`;
-    avatar.textContent = "";
-    profileImg.style.backgroundImage = `url(${perfil.avatar_url})`;
-  } else {
-    avatar.textContent = (perfil.nome || "A")[0];
-  }
-
-  renderLojas();
-}
-
-async function renderLojas(){
-  lojasScroll.innerHTML = "";
-
-  const { data: lojas } = await sb
-    .from("clientes_loja")
-    .select(`
-      loja_id,
-      user_profile:loja_id (negocio, avatar_url)
-    `)
-    .eq("cliente_id", user.id)
-    .order("updated_at", { ascending: false })
-    .limit(5);
-
-  const lojaAtual = new URLSearchParams(location.search).get("l");
-
-  for (const l of lojas || []) {
-    const div = document.createElement("div");
-    div.className = "loja-card" + (l.loja_id === lojaAtual ? " active" : "");
-    div.innerHTML = `
-      <div class="loja-logo" style="background-image:url('${l.user_profile?.avatar_url || ""}')"></div>
-      <span>${l.user_profile?.negocio || "Loja"}</span>
-    `;
-div.addEventListener("click", (e) => {
-  e.preventDefault();
-  e.stopPropagation();
-  trocarLoja(l.loja_id);
-});
-    lojasScroll.appendChild(div);
-  }
-
-  lojasScroll.innerHTML += `
-    <div class="add-loja" onclick="location.href='lojasat.html?from=app'">+</div>
-  `;
-}
-async function trocarLoja(lojaId){
-  // fecha modal
-  profileOverlay.style.display = "none";
-
-  // loja atual
-  const lojaAtual = new URLSearchParams(location.search).get("l");
-
-  // evita reload desnecessário
-  if(lojaAtual === lojaId) return;
-
-  // 🔥 limpa carrinho da loja anterior
-  if (lojaAtual) {
-    localStorage.removeItem("carrinho_" + lojaAtual);
-  }
-
-  // 🔄 salva loja ativa
-  await sb.from("clientes_loja").upsert({
-    cliente_id: user.id,
-    loja_id: lojaId
-  });
-
-  await sb.from("clientes_profile")
-    .update({ loja_ativa: lojaId })
-    .eq("id", user.id);
-
-  perfil.loja_ativa = lojaId;
-
-  // 🔥 atualiza URL (fonte da verdade)
-  history.replaceState(null, "", `app.html?l=${lojaId}`);
-
-  // 🔥 atualiza nome da loja no topo
-  const { data: novaLoja } = await sb
-    .from("user_profile")
-    .select("negocio")
-    .eq("user_id", lojaId)
-    .maybeSingle();
-
-  if(novaLoja?.negocio){
-    nomeLoja.innerText = novaLoja.negocio;
-  }
-
-  // 🔥 força reload REAL do iframe
-  frame.src = "about:blank";
-  setTimeout(() => {
-    frame.src = `homeclientes.html?l=${lojaId}&t=${Date.now()}`;
-  }, 50);
-
-  // 🔥 recalcula menus e estado
-  verificarProdutosLoja(lojaId);
-  atualizarBadgeCarrinho();
-  renderLojas();
-}
-
-
-
-function sincronizarClienteLoja() {
-  if (!perfil || !user) {
-    console.warn("Perfil ou usuário ainda não carregado");
-    return;
-  }
-
-  const clienteLoja = {
-    id: user.id,
-    nome: perfil.nome || "",
-    whatsapp: perfil.whatsapp || "",
-    cep: perfil.cep || "",
-    rua: perfil.rua || "",
-    numero: perfil.numero || "",
-    cidade: perfil.cidade || "",
-    uf: perfil.uf || ""
-  };
-
-  localStorage.setItem("CLIENTE_LOJA", JSON.stringify(clienteLoja));
-}
-
-
-
-
-
-
-  
+/* NAV */
 function go(el,p){
   document.querySelectorAll(".nav-item").forEach(i=>i.classList.remove("active"));
   el.classList.add("active");
-
-  // 🔥 SE FOR A LOJA, SINCRONIZA O PERFIL
-  if (p === "lojacliente.html") {
-    sincronizarClienteLoja();
-  }
-
-  const lojaId = new URLSearchParams(location.search).get("l");
-  frame.src = `${p}?l=${lojaId}&t=${Date.now()}`;
+  const lojaId=new URLSearchParams(location.search).get("l");
+  frame.src=`${p}?l=${lojaId}&t=${Date.now()}`;
 }
 
-
-function openProfile(){ profileOverlay.style.display="flex"; }
-function closeProfile(e){ if(!e || e.target.id==="profileOverlay") profileOverlay.style.display="none"; }
-async function sair(){ await sb.auth.signOut(); location.href="index.html"; }
-  async function salvarPerfil(){
-  const dados = {
-    nome: pNome.value.trim(),
-    whatsapp: pWhats.value.trim(),
-    cep: pCep.value.trim(),
-    rua: pRua.value.trim(),
-    numero: pNumero.value.trim(),
-    cidade: pCidade.value.trim(),
-    uf: pUf.value.trim()
-  };
-
-  const { error } = await sb
-    .from("clientes_profile")
-    .update(dados)
-    .eq("id", user.id);
-
-  if(error){
-    alert("Erro ao salvar perfil");
-    console.error(error);
-    return;
-  }
-
-  // Atualiza memória local
-  Object.assign(perfil, dados);
-
-  // Atualiza avatar inicial
-  avatar.textContent = (perfil.nome || "A")[0];
-
-  profileOverlay.style.display = "none";
-}
-let lojaParaRemover = null;
-
-function openConfirm(lojaId){
-  lojaParaRemover = lojaId;
-  confirmOverlay.style.display = "flex";
-}
-
-function closeConfirm(){
-  confirmOverlay.style.display = "none";
-  lojaParaRemover = null;
-}
-
-async function confirmRemove(){
-  if(!lojaParaRemover) return;
-
-  await sb
-    .from("clientes_loja")
-    .delete()
-    .eq("cliente_id", user.id)
-    .eq("loja_id", lojaParaRemover);
-
-  closeConfirm();
-  renderLojas();
-}
-foto.addEventListener("change", async () => {
-  const file = foto.files[0];
-  if (!file) return;
-
-  // validação simples
-  if (!file.type.startsWith("image/")) {
-    alert("Selecione uma imagem");
-    return;
-  }
-
-  const ext = file.name.split(".").pop();
-  const filePath = `${user.id}.${ext}`;
-
-  // upload
-  const { error: uploadError } = await sb.storage
-    .from("avatars")
-    .upload(filePath, file, {
-      upsert: true,
-      cacheControl: "3600"
-    });
-
-  if (uploadError) {
-    console.error(uploadError);
-    alert("Erro ao enviar foto");
-    return;
-  }
-
-  // url pública
-  const { data } = sb.storage
-    .from("avatars")
-    .getPublicUrl(filePath);
-
-  const avatarUrl = data.publicUrl;
-
-  // salva no perfil
-  const { error: updateError } = await sb
-    .from("clientes_profile")
-    .update({ avatar_url: avatarUrl })
-    .eq("id", user.id);
-
-  if (updateError) {
-    console.error(updateError);
-    alert("Erro ao salvar foto");
-    return;
-  }
-
-  // atualiza UI imediatamente
-  perfil.avatar_url = avatarUrl;
-  avatar.style.backgroundImage = `url(${avatarUrl})`;
-  avatar.textContent = "";
-  profileImg.style.backgroundImage = `url(${avatarUrl})`;
-});
-
-</script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("/firebase-messaging-sw.js")
-    .then(reg => {
-      console.log("Service Worker registrado:", reg.scope);
-    })
-    .catch(err => {
-      console.error("Erro ao registrar Service Worker", err);
-    });
+/* PROFILE */
+function openProfile(){profileOverlay.style.display="flex"}
+async function sair(){await sb.auth.signOut();location.href="index.html"}
+async function salvarPerfil(){
+  await sb.from("clientes_profile").update({
+    nome:pNome.value,whatsapp:pWhats.value
+  }).eq("id",user.id);
+  profileOverlay.style.display="none";
 }
 </script>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyC_xFOKDqXRe1r-sjj-Juo6-nDfYceICTI",
-  authDomain: "agenda-facil-77785.firebaseapp.com",
-  projectId: "agenda-facil-77785",
-  storageBucket: "agenda-facil-77785.appspot.com",
-  messagingSenderId: "1029015721724",
-  appId: "1:1029015721724:web:980a9f6e0cebd702976979"
-};
-
-const app = initializeApp(firebaseConfig);
-const messaging = getMessaging(app);
-
-// 🔔 pedir permissão corretamente
-(async () => {
-  let permission = Notification.permission;
-
-  if (permission !== "granted") {
-    permission = await Notification.requestPermission();
-  }
-
-  if (permission === "granted") {
-
-    const token = await getToken(messaging, {
-      vapidKey: "BOnsk8qbaS02uThkpNsVu-jDMctwMHqzPfy5ruJfJpuH31Tv3XJf7lZrZd7u_wYxvqVo4XxM6E8MW3DWEyQVocE"
-    });
-
-    console.log("FCM TOKEN:", token);
-
-    const { data: { session } } = await sb.auth.getSession();
-
-    if (session && token) {
-      await sb.from("notificacoes_tokens").upsert({
-        user_id: session.user.id,
-        token: token,
-        plataforma: "apk"
-      });
-    }
-  }
-})();
-
-
-// 🔔 quando o app estiver aberto
-onMessage(messaging, payload => {
-  alert(payload.notification.title + "\n" + payload.notification.body);
-});
-
-
-
-
- function getCarrinhoQuantidade(){
-  const lojaId = new URLSearchParams(location.search).get("l");
-  if(!lojaId) return 0;
-
-  const carrinho = JSON.parse(
-    localStorage.getItem("carrinho_" + lojaId) || "[]"
-  );
-
-  return carrinho.reduce((s,i)=>s + (i.quantidade || 1), 0);
-}
-
-function atualizarBadgeCarrinho(){
-  const qtd = getCarrinhoQuantidade();
-  const badge = document.getElementById("cartCount");
-
-  if(!badge) return;
-
-  if(qtd > 0){
-    badge.innerText = qtd > 99 ? "99+" : qtd;
-    badge.style.display = "inline-block";
-  }else{
-    badge.style.display = "none";
-  }
-}
-
-function abrirCarrinho(){
-  const lojaId = new URLSearchParams(location.search).get("l");
-  if(!lojaId) return;
-
-  frame.src = `carrinho.html?l=${lojaId}&t=${Date.now()}`;
-}
-/* 🔥 EXPÕE FUNÇÕES PARA O IFRAME */
-window.abrirCarrinho = abrirCarrinho;
-window.atualizarBadgeCarrinho = atualizarBadgeCarrinho;
-/* 🔥 AQUI — FORA DE FUNÇÕES */
-setInterval(() => {
-  if (typeof atualizarBadgeCarrinho === "function") {
-    atualizarBadgeCarrinho();
-  }
-}, 1000);
-
-
-
-window.animarCarrinhoTopo = function(){
-  const cart = document.getElementById("cartIcon");
-  if(!cart) return;
-
-  cart.animate([
-    { transform: "scale(1)" },
-    { transform: "scale(1.25)" },
-    { transform: "scale(1)" }
-  ], {
-    duration: 400,
-    easing: "cubic-bezier(.22,.61,.36,1)"
-  });
-};
-window.addEventListener("popstate", () => {
-  const lojaId = new URLSearchParams(location.search).get("l");
-  if(!lojaId) return;
-
-  frame.src = "about:blank";
-  setTimeout(() => {
-    frame.src = `homeclientes.html?l=${lojaId}&t=${Date.now()}`;
-  }, 50);
-
-  verificarProdutosLoja(lojaId);
-  atualizarBadgeCarrinho();
-  renderLojas();
-});
-
-profileOverlay.addEventListener("click", (e) => {
-  if (e.target === profileOverlay) {
-    profileOverlay.style.display = "none";
-  }
-});
-
-
-
-
-
-
-  
-
-</script>
-
 
 </body>
 </html>
