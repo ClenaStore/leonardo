@@ -95,6 +95,29 @@ button{
   gap:8px;
   margin-bottom:12px
 }
+.total-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:110px;
+  height:110px;
+  border-radius:50%;
+  background:#d4af37;
+  color:#000;
+  font-weight:800;
+  font-size:14px;
+  margin:10px 0;
+  text-align:center;
+  line-height:1.2
+}
+.modalidades{
+  font-size:12px;
+  color:#cbd5f5;
+  margin-top:8px
+}
+.modalidades div{
+  margin-bottom:4px
+}
 </style>
 </head>
 
@@ -214,8 +237,18 @@ function processarArquivo(file, data, preview){
         mapa[key] = (mapa[key] || 0) + valor;
       });
 
+      let total = 0;
+      const modalidadesHTML = [];
+
       Object.entries(mapa).forEach(([k,v])=>{
         const [empresa,modalidade,caixa] = k.split("|");
+
+        total += v;
+
+        modalidadesHTML.push(
+          `<div>• ${modalidade}: R$ ${v.toFixed(2)}</div>`
+        );
+
         registros.push({
           import_id: importIdAtual,
           data_lancamento: data,
@@ -231,9 +264,17 @@ function processarArquivo(file, data, preview){
       preview.innerHTML += `
         <div class="file-box">
           <strong>${file.name}</strong><br>
-          ${Object.values(mapa).length} registros
+
+          <div class="total-badge">
+            R$<br>${total.toFixed(2)}
+          </div>
+
+          <div class="modalidades">
+            ${modalidadesHTML.join("")}
+          </div>
         </div>
       `;
+
       resolve();
     };
 
