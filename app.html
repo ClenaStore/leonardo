@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+
 <title>Grupo DV</title>
 
 <meta name="viewport"
@@ -125,90 +126,55 @@ iframe{
   <div class="avatar"></div>
 </div>
 
-<!-- CONTEÚDO -->
+<!-- IFRAME -->
 <div class="content">
-  <iframe id="frame"></iframe>
+  <iframe id="frame" src="dashboard.html"></iframe>
 </div>
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <div class="nav-item" data-page="dashboard.html">
+  <div class="nav-item active" onclick="go(this,'dashboard.html')">
     <i class="ri-dashboard-line"></i>
     Dashboard
   </div>
 
-  <div class="nav-item" data-page="entradas.html">
+  <div class="nav-item" onclick="go(this,'entradas.html')">
     <i class="ri-arrow-down-circle-line"></i>
     Entradas
   </div>
 
-  <div class="nav-item" data-page="saidas.html">
+  <div class="nav-item" onclick="go(this,'saidas.html')">
     <i class="ri-arrow-up-circle-line"></i>
     Saídas
   </div>
 
-  <div class="nav-item" data-page="relatorios.html">
+  <div class="nav-item" onclick="go(this,'relatorios.html')">
     <i class="ri-bar-chart-line"></i>
     Relatórios
   </div>
 
-  <div class="nav-item" data-page="config.html">
+  <div class="nav-item" onclick="go(this,'config.html')">
     <i class="ri-settings-3-line"></i>
     Config
   </div>
 </nav>
 
 <script>
-/* ================= CACHE CONFIG ================= */
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
-const PAGE_KEY = "APP_PAGE_CACHE";
-const TS_KEY = "APP_PAGE_CACHE_TS";
-
 const frame = document.getElementById("frame");
-const navItems = document.querySelectorAll(".nav-item");
+let paginaAtual = "dashboard.html";
 
-/* ================= FUNÇÕES ================= */
-function setActive(page){
-  navItems.forEach(i=>{
-    i.classList.toggle("active", i.dataset.page === page);
-  });
-}
+function go(el, page){
+  if(paginaAtual === page) return; // NÃO recarrega
 
-function carregarPagina(page, force=false){
-  const now = Date.now();
-  const ts = Number(localStorage.getItem(TS_KEY));
+  paginaAtual = page;
 
-  const cacheValido = ts && (now - ts < CACHE_TTL);
+  document.querySelectorAll(".nav-item")
+    .forEach(i => i.classList.remove("active"));
 
-  if(!force && cacheValido && localStorage.getItem(PAGE_KEY) === page){
-    // NÃO recarrega iframe
-    setActive(page);
-    return;
-  }
+  el.classList.add("active");
 
   frame.src = page;
-  localStorage.setItem(PAGE_KEY, page);
-  localStorage.setItem(TS_KEY, now);
-  setActive(page);
 }
-
-/* ================= NAV CLICK ================= */
-navItems.forEach(item=>{
-  item.onclick = ()=>{
-    carregarPagina(item.dataset.page);
-  };
-});
-
-/* ================= INIT ================= */
-(function init(){
-  const now = Date.now();
-  const ts = Number(localStorage.getItem(TS_KEY));
-  const page = localStorage.getItem(PAGE_KEY) || "dashboard.html";
-
-  const cacheExpirou = !ts || (now - ts > CACHE_TTL);
-
-  carregarPagina(page, cacheExpirou);
-})();
 </script>
 
 </body>
