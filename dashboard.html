@@ -13,7 +13,7 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<!-- FLATPICKR (RANGE) -->
+<!-- FLATPICKR -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
@@ -100,9 +100,8 @@ select,input,button{
 /* CARDS */
 .cards{
   display:grid;
-  grid-template-columns:1fr;
   gap:12px;
-  padding:0 16px;
+  padding:0 16px 24px;
 }
 .card{
   background:var(--card);
@@ -120,13 +119,11 @@ select,input,button{
 
 <body>
 
-<!-- HEADER -->
 <div class="header">
   <h2>Dashboard Financeiro</h2>
-  <span>Relatório multi-empresas</span>
+  <span id="periodoLabel">—</span>
 </div>
 
-<!-- FILTROS -->
 <div class="filters">
 
   <!-- EMPRESA -->
@@ -137,20 +134,18 @@ select,input,button{
     <option value="Empresa B">Empresa B</option>
   </select>
 
-  <!-- PERÍODO + LIMPAR -->
+  <!-- PERÍODO -->
   <div class="filtro-periodo">
     <input id="periodo" placeholder="Período (dd/mm/aaaa)">
     <button class="btn-limpar" onclick="limparFiltros()">Limpar</button>
   </div>
 </div>
 
-<!-- GRAFICO -->
 <div class="chart-box">
   <h3>Evolução de ganhos e gastos</h3>
   <canvas id="grafico" height="180"></canvas>
 </div>
 
-<!-- CARDS -->
 <div class="cards">
   <div class="card">
     <div class="label">Resultado</div>
@@ -179,31 +174,39 @@ const dados = [
 ];
 
 let chart;
-let dataInicio = null;
-let dataFim = null;
+let dataInicio = localStorage.getItem("DATA_INICIO");
+let dataFim = localStorage.getItem("DATA_FIM");
 
 /* ===== EMPRESA GLOBAL ===== */
 const empresaSelect = document.getElementById("empresa");
-const empresaSalva = localStorage.getItem("EMPRESA_ATIVA");
+empresaSelect.value = localStorage.getItem("EMPRESA_ATIVA") || "todas";
 
-if(empresaSalva){
-  empresaSelect.value = empresaSalva;
-}
-
-empresaSelect.addEventListener("change", ()=>{
+empresaSelect.onchange = () => {
   localStorage.setItem("EMPRESA_ATIVA", empresaSelect.value);
   aplicarFiltros();
-});
+};
 
-/* ===== CALENDÁRIO RANGE (DD/MM/AAAA) ===== */
+/* ===== CALENDÁRIO ===== */
 const picker = flatpickr("#periodo",{
   mode:"range",
   dateFormat:"d/m/Y",
   locale:flatpickr.l10ns.pt,
+  defaultDate: dataInicio && dataFim ? [
+    new Date(dataInicio),
+    new Date(dataFim)
+  ] : null,
   onClose:(datas)=>{
     if(datas.length === 2){
       dataInicio = datas[0].toISOString().split("T")[0];
       dataFim = datas[1].toISOString().split("T")[0];
+
+      localStorage.setItem("DATA_INICIO", dataInicio);
+      localStorage.setItem("DATA_FIM", dataFim);
+      localStorage.setItem(
+        "DATA_LABEL_BR",
+        `${datas[0].toLocaleDateString("pt-BR")} a ${datas[1].toLocaleDateString("pt-BR")}`
+      );
+
       aplicarFiltros();
     }
   }
@@ -214,6 +217,11 @@ function limparFiltros(){
   dataInicio = null;
   dataFim = null;
   picker.clear();
+
+  localStorage.removeItem("DATA_INICIO");
+  localStorage.removeItem("DATA_FIM");
+  localStorage.removeItem("DATA_LABEL_BR");
+
   aplicarFiltros();
 }
 
@@ -228,6 +236,9 @@ function aplicarFiltros(){
   );
 
   atualizarDashboard(filtrado);
+
+  periodoLabel.innerText =
+    localStorage.getItem("DATA_LABEL_BR") || "Período não definido";
 }
 
 /* ===== DASHBOARD ===== */
@@ -243,9 +254,9 @@ function atualizarDashboard(lista){
     saidas.push(d.saida);
   });
 
-  resultado.innerText = `R$ ${(ent-sai).toLocaleString("pt-BR")}`;
-  entradasEl.innerText = `R$ ${ent.toLocaleString("pt-BR")}`;
-  saidasEl.innerText = `R$ ${sai.toLocaleString("pt-BR")}`;
+  resultado.innerText = `R$ ${(ent-sai).toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+  entradasEl.innerText = `R$ ${ent.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+  saidasEl.innerText = `R$ ${sai.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 
   if(chart) chart.destroy();
 
