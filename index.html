@@ -12,7 +12,7 @@
   gtag('config', 'G-T97MS35TJ6');
 </script>
 
-<title>Financeiro • App</title>
+<title>Financeiro</title>
 
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0b">
@@ -24,7 +24,6 @@
 <style>
 :root{
   --primary:#d4af37;
-  --primary-soft:#f1d98a;
   --bg:#0b0b0b;
   --card:#151515;
   --border:#242424;
@@ -32,19 +31,22 @@
   --muted:#9ca3af;
   --danger:#dc2626;
   --topbar-h:56px;
-  --navbar-h:74px;
+  --navbar-h:72px;
 }
+
 *{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
-html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;color:var(--text)}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);overflow:hidden}
 
 /* TOPBAR */
 .topbar{
   position:fixed;top:0;left:0;right:0;
   height:var(--topbar-h);
-  background:linear-gradient(180deg,#0b0b0b,#111);
+  background:#0b0b0b;
   border-bottom:1px solid var(--border);
   padding:0 16px;
-  display:flex;align-items:center;justify-content:space-between;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
   z-index:10;
 }
 .topbar h1{font-size:16px;font-weight:800;color:var(--primary)}
@@ -54,7 +56,8 @@ html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;color:var(
   width:36px;height:36px;border-radius:50%;
   background:linear-gradient(135deg,#d4af37,#f1d98a);
   display:flex;align-items:center;justify-content:center;
-  color:#000;font-weight:800;cursor:pointer;
+  color:#000;font-weight:800;
+  cursor:pointer;
   background-size:cover;background-position:center;
 }
 
@@ -64,49 +67,49 @@ html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;color:var(
   top:var(--topbar-h);
   bottom:var(--navbar-h);
   left:0;right:0;
-  background:#000;
 }
 iframe{width:100%;height:100%;border:none;background:#000}
 
 /* NAVBAR */
 .navbar{
-  position:fixed;bottom:0;left:0;right:0;
+  position:fixed;
+  bottom:0;left:0;right:0;
   height:var(--navbar-h);
-  background:linear-gradient(180deg,#111,#0b0b0b);
+  background:#0b0b0b;
   border-top:1px solid var(--border);
   display:grid;
   grid-template-columns:repeat(5,1fr);
-  align-items:center;
 }
 .nav-item{
-  font-size:10px;
-  color:var(--muted);
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
-  gap:4px;
+  font-size:11px;
+  color:var(--muted);
   cursor:pointer;
 }
 .nav-item i{font-size:22px}
 .nav-item.active{color:var(--primary)}
 
-/* OVERLAYS */
-#profileOverlay,#confirmOverlay{
-  position:fixed;inset:0;
+/* OVERLAY */
+#profileOverlay{
+  position:fixed;
+  inset:0;
   background:rgba(0,0,0,.7);
-  display:none;align-items:center;justify-content:center;
+  display:none;
+  align-items:center;
+  justify-content:center;
   z-index:9999;
 }
 
 /* PROFILE MODAL */
 .profile-modal{
-  width:92%;max-width:420px;
+  width:92%;
+  max-width:420px;
   background:var(--card);
-  border-radius:26px;
+  border-radius:22px;
   padding:20px;
-  max-height:90vh;
-  overflow:auto;
   border:1px solid var(--border);
 }
 
@@ -114,55 +117,41 @@ iframe{width:100%;height:100%;border:none;background:#000}
 .profile-img{
   width:90px;height:90px;border-radius:50%;
   background:#222;
-  background-size:cover;background-position:center;
   margin:0 auto 12px;
-  position:relative;
   border:2px solid var(--primary);
+  background-size:cover;background-position:center;
 }
 .profile-img .cam{
-  position:absolute;right:-4px;bottom:-4px;
-  width:34px;height:34px;border-radius:50%;
-  background:linear-gradient(135deg,#d4af37,#f1d98a);
+  position:absolute;
+  right:-4px;bottom:-4px;
+  width:34px;height:34px;
+  border-radius:50%;
+  background:var(--primary);
   display:flex;align-items:center;justify-content:center;
-  color:#000;cursor:pointer;
+  color:#000;
 }
 
 /* FORM */
 .field{margin-bottom:10px}
 .field input{
-  width:100%;padding:12px;border-radius:12px;
+  width:100%;
+  padding:12px;
+  border-radius:12px;
   border:1px solid var(--border);
-  background:#0b0b0b;color:var(--text);
+  background:#0b0b0b;
+  color:var(--text);
 }
-.field input::placeholder{color:#777}
-.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 
-/* BUTTONS */
 .btn{
-  width:100%;padding:14px;border:none;
-  border-radius:999px;font-weight:800;cursor:pointer;
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:999px;
+  font-weight:800;
+  cursor:pointer;
 }
-.btn-primary{background:linear-gradient(135deg,#d4af37,#f1d98a);color:#000}
+.btn-primary{background:var(--primary);color:#000}
 .btn-danger{background:#2a0e0e;color:#f87171}
-.btn-ghost{background:#1a1a1a;color:#ddd}
-
-/* LOJAS */
-.lojas-wrap{margin-top:14px}
-.lojas-header h4{font-size:14px;color:var(--primary)}
-.lojas-scroll{display:flex;gap:14px;overflow-x:auto}
-.loja-card{min-width:90px;text-align:center;cursor:pointer}
-.loja-logo{
-  width:64px;height:64px;border-radius:50%;
-  background:#222;background-size:cover;background-position:center;
-  margin:0 auto 6px;border:2px solid transparent;
-}
-.loja-card.active .loja-logo{border-color:var(--primary)}
-.add-loja{
-  min-width:64px;height:64px;border-radius:50%;
-  border:1px dashed var(--primary);
-  display:flex;align-items:center;justify-content:center;
-  font-size:26px;color:var(--primary);cursor:pointer;
-}
 </style>
 </head>
 
@@ -170,12 +159,11 @@ iframe{width:100%;height:100%;border:none;background:#000}
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <h1 id="nomeLoja">GRUPO DV</h1>
-  <div style="display:flex;align-items:center;gap:14px">
-    <div class="avatar" id="avatar" onclick="openProfile()">A</div>
-  </div>
+  <h1 id="nomeLoja">FINANCEIRO</h1>
+  <div class="avatar" id="avatar" onclick="openProfile()">A</div>
 </div>
 
+<!-- CONTENT -->
 <div class="content">
   <iframe id="frame"></iframe>
 </div>
@@ -192,7 +180,7 @@ iframe{width:100%;height:100%;border:none;background:#000}
     <i class="ri-arrow-up-circle-line"></i>Saídas
   </div>
   <div class="nav-item" onclick="go(this,'relatorios.html')">
-    <i class="ri-bar-chart-2-line"></i>Relatórios
+    <i class="ri-bar-chart-line"></i>Relatórios
   </div>
   <div class="nav-item" onclick="go(this,'config.html')">
     <i class="ri-settings-3-line"></i>Config
@@ -202,10 +190,7 @@ iframe{width:100%;height:100%;border:none;background:#000}
 <!-- PROFILE -->
 <div id="profileOverlay">
   <div class="profile-modal" onclick="event.stopPropagation()">
-    <div class="profile-img" id="profileImg">
-      <div class="cam" onclick="foto.click()"><i class="ri-camera-line"></i></div>
-    </div>
-    <input type="file" id="foto" hidden accept="image/*">
+    <div class="profile-img" id="profileImg"></div>
     <div class="field"><input id="pNome" placeholder="Nome"></div>
     <div class="field"><input id="pWhats" placeholder="WhatsApp"></div>
     <button class="btn btn-primary" onclick="salvarPerfil()">Salvar</button>
@@ -222,7 +207,6 @@ const sb = supabase.createClient(
 const frame = document.getElementById("frame");
 let user, perfil;
 
-/* INIT */
 (async()=>{
   const { data:{session} } = await sb.auth.getSession();
   if(!session){ location.href="index.html"; return; }
@@ -231,21 +215,34 @@ let user, perfil;
   const params=new URLSearchParams(location.search);
   let lojaId=params.get("l");
 
-  const {data:perfilDB}=await sb.from("clientes_profile").select("*").eq("id",user.id).maybeSingle();
-  perfil=perfilDB || (await sb.from("clientes_profile").insert({id:user.id,email:user.email}).select().single()).data;
+  const {data:perfilDB}=await sb
+    .from("clientes_profile")
+    .select("*")
+    .eq("id",user.id)
+    .maybeSingle();
+
+  perfil = perfilDB || (await sb.from("clientes_profile").insert({
+    id:user.id,email:user.email,nome:user.email
+  }).select().single()).data;
 
   if(!lojaId && perfil.loja_ativa){
     lojaId=perfil.loja_ativa;
     history.replaceState(null,"",`app.html?l=${lojaId}`);
   }
 
-  const {data:lojaTopo}=await sb.from("user_profile").select("negocio").eq("user_id",perfil.loja_ativa).maybeSingle();
+  const {data:lojaTopo}=await sb
+    .from("user_profile")
+    .select("negocio")
+    .eq("user_id",perfil.loja_ativa)
+    .maybeSingle();
+
   if(lojaTopo?.negocio) nomeLoja.innerText=lojaTopo.negocio;
 
   frame.src=`dashboard.html?l=${perfil.loja_ativa}&t=${Date.now()}`;
+
+  carregarPerfil();
 })();
 
-/* NAV */
 function go(el,p){
   document.querySelectorAll(".nav-item").forEach(i=>i.classList.remove("active"));
   el.classList.add("active");
@@ -253,12 +250,19 @@ function go(el,p){
   frame.src=`${p}?l=${lojaId}&t=${Date.now()}`;
 }
 
-/* PROFILE */
-function openProfile(){profileOverlay.style.display="flex"}
-async function sair(){await sb.auth.signOut();location.href="index.html"}
+function carregarPerfil(){
+  pNome.value = perfil.nome || "";
+  pWhats.value = perfil.whatsapp || "";
+  avatar.textContent = (perfil.nome||"A")[0];
+}
+
+function openProfile(){ profileOverlay.style.display="flex"; }
+async function sair(){ await sb.auth.signOut(); location.href="index.html"; }
+
 async function salvarPerfil(){
   await sb.from("clientes_profile").update({
-    nome:pNome.value,whatsapp:pWhats.value
+    nome:pNome.value,
+    whatsapp:pWhats.value
   }).eq("id",user.id);
   profileOverlay.style.display="none";
 }
