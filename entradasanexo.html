@@ -25,7 +25,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 <body>
 
 <div class="card">
-  <h2>Importar Resumo de Vendas</h2>
+  <h2>Importar Resumo de Vendas (Mercatto / Delícia)</h2>
 
   <input type="file" id="files" accept=".xls,.xlsx" multiple><br><br>
 
@@ -60,24 +60,23 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================= AGRUPAMENTO ================= */
 const categoriasAgrupadas = {
-  "CRÉDITO": ["credito", "cartao credito", "credito pos", "credito tef"],
-  "DÉBITO": ["debito", "cartao debito", "debito pos", "debito tef"],
-  "PIX": ["pix", "pix tef", "qrcode"],
+  "CRÉDITO": ["credito", "cartao credito", "credito tef"],
+  "DÉBITO": ["debito", "cartao debito", "debito tef"],
+  "PIX": ["pix", "pix tef", "pix cnpj"],
   "DINHEIRO": ["dinheiro"],
-  "VOUCHER": ["voucher"],
-  "CREDIÁRIO": ["crediario"],
-  "ONLINE": ["online"],
-  "CONSUMO INTERNO": ["funcionario", "consumo"],
+  "ONLINE": ["pagamento online", "refeicao"],
+  "CONSUMO INTERNO": ["funcionario", "consumo funcionarios"],
+  "MARKETING": ["marketing"],
   "OUTROS": []
 };
 
 const normalize = s =>
   (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 
-function agruparModalidade(nome){
-  const n = normalize(nome);
-  for(const g in categoriasAgrupadas){
-    if(categoriasAgrupadas[g].some(v=>n.includes(v))) return g;
+function agruparModalidade(texto){
+  const n = normalize(texto);
+  for(const cat in categoriasAgrupadas){
+    if(categoriasAgrupadas[cat].some(v=>n.includes(v))) return cat;
   }
   return "OUTROS";
 }
@@ -113,42 +112,38 @@ function processarArquivo(file, data, preview){
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws,{header:1});
 
-      let empresaPadrao = "";
+      let caixaAtual = null;
       let registrosArquivo = [];
 
-      // 🔍 Detecta se é MERCATTO (por CAIXA)
-      const isMercatto = rows.flat().some(c =>
-        typeof c === "string" && normalize(c).includes("caixa")
-      );
+      rows.forEach(linha=>{
+        const col0 = linha[0];
+        const descricao = linha[1];
+        const valorRaw = linha[2];
 
-      rows.forEach(r=>{
-        const descricao = r[1];
-        const valor = Number(String(r[2]).replace(",","."));
-        const caixa = Number(r[0]);
-
-        if(valor > 0 && typeof descricao === "string"){
-          let empresa = "DESCONHECIDA";
-
-          if(isMercatto && caixa){
-            empresa = caixa <= 5
-              ? "EMPORIO MERCATTO"
-              : "RESTAURANTE MERCATTO";
-          }else if(!empresaPadrao){
-            empresaPadrao = "EMPRESA NÃO IDENTIFICADA";
-            empresa = empresaPadrao;
-          }else{
-            empresa = empresaPadrao;
-          }
-
-          registrosArquivo.push({
-            empresa,
-            data,
-            modalidade: agruparModalidade(descricao),
-            valor,
-            origem: "IMPORTACAO_EXCEL",
-            arquivo_origem: file.name
-          });
+        // 🔹 Detecta CAIXA
+        if(typeof col0 === "string" && col0.includes("Caixa")){
+          caixaAtual = parseInt(col0.replace(/\D/g,""));
+          return;
         }
+
+        // ❌ Ignora totais
+        if(typeof descricao === "string" && descricao.includes("Total")) return;
+
+        const valor = Number(String(valorRaw).replace(".","").replace(",","."));
+        if(!caixaAtual || !descricao || valor <= 0) return;
+
+        const empresa = caixaAtual <= 5
+          ? "EMPORIO MERCATTO"
+          : "RESTAURANTE MERCATTO";
+
+        registrosArquivo.push({
+          empresa,
+          data,
+          modalidade: agruparModalidade(descricao),
+          valor,
+          origem: "IMPORTACAO_EXCEL",
+          arquivo_origem: file.name
+        });
       });
 
       todosRegistros.push(...registrosArquivo);
