@@ -269,27 +269,33 @@ function montarDashboard(lista){
   const info = {};
 
   lista.forEach(r=>{
-    if(MODALIDADES_NAO_FINANCEIRAS.includes(r.modalidade)){
-      info[r.modalidade]=(info[r.modalidade]||0)+Number(r.valor);
+    const v = Number(r.valor) || 0;
+    const mod = (r.modalidade || "").toUpperCase();
+
+    if (MODALIDADES_NAO_FINANCEIRAS.some(n => mod.includes(n))) {
+      info[r.modalidade] = (info[r.modalidade] || 0) + v;
       return;
     }
-    total+=Number(r.valor);
-    porDia[r.data_lancamento]=(porDia[r.data_lancamento]||0)+Number(r.valor);
+
+    total += v;
+    porDia[r.data_lancamento] =
+      (porDia[r.data_lancamento] || 0) + v;
   });
 
   totalEntradas.innerText =
-    `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})}`;
 
   const dias = Object.keys(porDia).length;
   ticketMedio.innerText =
     dias ? `R$ ${(total/dias).toLocaleString("pt-BR",{
-  minimumFractionDigits:2,
-  maximumFractionDigits:2
-})
-}` : "R$ 0,00";
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    })}` : "R$ 0,00";
 
   informativas.innerHTML =
-    Object.entries(info).map(([m,v])=>`${m}: R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`).join("<br>") || "—";
+    Object.entries(info)
+      .map(([m,v])=>`${m}: R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`)
+      .join("<br>") || "—";
 
   if(chart) chart.destroy();
   chart = new Chart(grafico,{
@@ -306,6 +312,7 @@ function montarDashboard(lista){
     options:{plugins:{legend:{display:false}}}
   });
 }
+
 
 /* INIT */
 carregarEmpresas().then(carregarDados);
