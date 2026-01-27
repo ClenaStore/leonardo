@@ -15,7 +15,7 @@ body{margin:0;padding:20px;background:#0b0b0b;color:#fff;font-family:Inter}
 .card{background:#151515;border:1px solid #242424;border-radius:18px;padding:16px;margin-bottom:16px}
 input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #242424;background:#0b0b0b;color:#fff}
 button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
-.preview{font-size:13px;color:#cbd5f5;line-height:1.5}
+.preview{font-size:13px;color:#cbd5f5;line-height:1.6}
 .file-box{border-top:1px dashed #333;padding-top:12px;margin-top:12px}
 .success{color:#22c55e}
 .error{color:#ef4444}
@@ -25,7 +25,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 <body>
 
 <div class="card">
-  <h2>Importar Resumo de Vendas (Múltiplos Arquivos)</h2>
+  <h2>Importar Resumo de Vendas</h2>
 
   <input type="file" id="files" accept=".xls,.xlsx" multiple><br><br>
 
@@ -51,32 +51,38 @@ const SUPABASE_URL = "https://dxkszikemntfusfyrzos.supabase.co";
 const SUPABASE_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ================= CONFIG AGRUPAMENTO ================= */
+/* ================= DATA PADRÃO = ONTEM ================= */
+(function(){
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  document.getElementById("data").value = d.toISOString().split("T")[0];
+})();
+
+/* ================= AGRUPAMENTO ================= */
 const categoriasAgrupadas = {
-  "CRÉDITO": ["credito", "cartao credito", "credito pos", "credito tef", "cart credito", "crédito à vista"],
+  "CRÉDITO": ["credito", "cartao credito", "credito pos", "credito tef"],
   "DÉBITO": ["debito", "cartao debito", "debito pos", "debito tef"],
-  "PIX": ["pix", "pix tef", "pix pos", "qrcode"],
+  "PIX": ["pix", "pix tef", "qrcode"],
   "DINHEIRO": ["dinheiro"],
-  "CREDIÁRIO": ["crediario", "crediario clientes"],
   "VOUCHER": ["voucher"],
-  "ONLINE": ["pagamento online", "pgto online"],
-  "CONSUMO INTERNO": ["funcionario", "consumo funcionarios"],
+  "CREDIÁRIO": ["crediario"],
+  "ONLINE": ["online"],
+  "CONSUMO INTERNO": ["funcionario", "consumo"],
   "OUTROS": []
 };
 
-/* ================= UTIL ================= */
 const normalize = s =>
   (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 
 function agruparModalidade(nome){
   const n = normalize(nome);
-  for(const grupo in categoriasAgrupadas){
-    if(categoriasAgrupadas[grupo].some(v => n.includes(v))) return grupo;
+  for(const g in categoriasAgrupadas){
+    if(categoriasAgrupadas[g].some(v=>n.includes(v))) return g;
   }
   return "OUTROS";
 }
 
-/* ================= VARIÁVEIS ================= */
+/* ================= VAR ================= */
 let todosRegistros = [];
 
 /* ================= PROCESSAR ================= */
@@ -107,25 +113,37 @@ function processarArquivo(file, data, preview){
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws,{header:1});
 
-      let empresa = "DESCONHECIDA";
+      let empresaPadrao = "";
       let registrosArquivo = [];
 
-      // 🔍 Detecta empresa
-      rows.flat().forEach(cell=>{
-        if(typeof cell === "string" && normalize(cell).includes("loja")){
-          empresa = cell.split("-").slice(1).join("-").trim() || cell.trim();
-        }
-      });
+      // 🔍 Detecta se é MERCATTO (por CAIXA)
+      const isMercatto = rows.flat().some(c =>
+        typeof c === "string" && normalize(c).includes("caixa")
+      );
 
-      // 📊 Processa linhas
       rows.forEach(r=>{
-        const forma = r[1];
+        const descricao = r[1];
         const valor = Number(String(r[2]).replace(",","."));
-        if(typeof forma === "string" && valor > 0){
+        const caixa = Number(r[0]);
+
+        if(valor > 0 && typeof descricao === "string"){
+          let empresa = "DESCONHECIDA";
+
+          if(isMercatto && caixa){
+            empresa = caixa <= 5
+              ? "EMPORIO MERCATTO"
+              : "RESTAURANTE MERCATTO";
+          }else if(!empresaPadrao){
+            empresaPadrao = "EMPRESA NÃO IDENTIFICADA";
+            empresa = empresaPadrao;
+          }else{
+            empresa = empresaPadrao;
+          }
+
           registrosArquivo.push({
             empresa,
             data,
-            modalidade: agruparModalidade(forma),
+            modalidade: agruparModalidade(descricao),
             valor,
             origem: "IMPORTACAO_EXCEL",
             arquivo_origem: file.name
@@ -135,12 +153,10 @@ function processarArquivo(file, data, preview){
 
       todosRegistros.push(...registrosArquivo);
 
-      // 🖥 Preview
       preview.innerHTML += `
         <div class="file-box">
           <strong>Arquivo:</strong> ${file.name}<br>
-          <strong>Empresa:</strong> ${empresa}<br>
-          ${registrosArquivo.map(r=>`• ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
+          ${registrosArquivo.map(r=>`• ${r.empresa} — ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
         </div>
       `;
 
@@ -162,7 +178,7 @@ async function salvarTudo(){
 
   document.getElementById("msg").innerHTML = error
     ? `<div class="error">Erro ao salvar</div>`
-    : `<div class="success">Todos os arquivos importados com sucesso</div>`;
+    : `<div class="success">Importação concluída com sucesso</div>`;
 }
 </script>
 
