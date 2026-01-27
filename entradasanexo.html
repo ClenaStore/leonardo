@@ -11,23 +11,90 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body{margin:0;padding:20px;background:#0b0b0b;color:#fff;font-family:Inter}
-.card{background:#151515;border:1px solid #242424;border-radius:18px;padding:16px;margin-bottom:16px}
-input,select,button{width:100%;padding:12px;border-radius:12px;border:1px solid #242424;background:#0b0b0b;color:#fff}
-button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
-.preview{font-size:13px;color:#cbd5f5;line-height:1.6}
-.file-box{border-top:1px dashed #333;padding-top:12px;margin-top:12px}
-
+body{
+  margin:0;
+  padding:20px;
+  background:#0b0b0b;
+  color:#fff;
+  font-family:Inter
+}
+.card{
+  background:#151515;
+  border:1px solid #242424;
+  border-radius:18px;
+  padding:16px;
+  margin-bottom:16px
+}
+input,select,button{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid #242424;
+  background:#0b0b0b;
+  color:#fff
+}
+button{
+  background:#d4af37;
+  color:#000;
+  font-weight:800;
+  cursor:pointer
+}
+.preview{
+  font-size:13px;
+  color:#cbd5f5;
+  line-height:1.6
+}
+.file-box{
+  border-top:1px dashed #333;
+  padding-top:12px;
+  margin-top:12px
+}
 .success{color:#22c55e}
 .error{color:#ef4444}
 
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:100}
-.modal-content{background:#151515;border-radius:20px;padding:16px;width:100%;max-width:540px;max-height:85vh;overflow:auto}
-.modal-header{display:flex;justify-content:space-between;align-items:center}
+/* MODAL */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:100
+}
+.modal-content{
+  background:#151515;
+  border-radius:20px;
+  padding:16px;
+  width:100%;
+  max-width:540px;
+  max-height:85vh;
+  overflow:auto
+}
+.modal-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:10px
+}
 .close{cursor:pointer;font-size:20px}
-.item{border:1px solid #242424;border-radius:14px;padding:12px;margin-bottom:10px}
-.item button{background:#ef4444;color:#fff;margin-top:8px}
-.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.item{
+  border:1px solid #242424;
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:10px
+}
+.item button{
+  background:#ef4444;
+  color:#fff;
+  margin-top:8px
+}
+.filters{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:12px
+}
 </style>
 </head>
 
@@ -35,6 +102,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 
 <div class="card">
   <h2>Importar Resumo de Vendas</h2>
+
   <input type="file" id="files" accept=".xls,.xlsx" multiple><br><br>
 
   <label>Data do lançamento</label>
@@ -54,6 +122,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
   <div id="msg"></div>
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
   <div class="modal-content">
     <div class="modal-header">
@@ -73,7 +142,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <script>
-/* 🔥 CORREÇÃO CRÍTICA */
+/* SUPABASE */
 const { createClient } = supabase;
 const sb = createClient(
   "https://dxkszikemntfusfyrzos.supabase.co",
@@ -81,17 +150,18 @@ const sb = createClient(
 );
 
 const uuid = () => crypto.randomUUID();
+
 let registros = [];
 let importIdAtual = null;
 
-/* data padrão = ontem */
+/* DATA PADRÃO = ONTEM */
 (() => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   document.getElementById("data").value = d.toISOString().split("T")[0];
 })();
 
-/* ===== IMPORTAÇÃO ===== */
+/* ================= IMPORTAÇÃO ================= */
 
 async function processarArquivos(){
   const files = document.getElementById("files").files;
@@ -135,7 +205,9 @@ function processarArquivo(file, data, preview){
         let empresaFinal = empresaArquivo;
         if(!empresaArquivo){
           if(!caixaAtual) return;
-          empresaFinal = caixaAtual <= 5 ? "EMPORIO MERCATTO" : "RESTAURANTE MERCATTO";
+          empresaFinal = caixaAtual <= 5
+            ? "EMPORIO MERCATTO"
+            : "RESTAURANTE MERCATTO";
         }
 
         const key = `${empresaFinal}|${modalidade}|${caixaAtual||0}`;
@@ -148,15 +220,20 @@ function processarArquivo(file, data, preview){
           import_id: importIdAtual,
           data_lancamento: data,
           empresa,
-          caixa:Number(caixa)||null,
+          caixa: Number(caixa)||null,
           modalidade,
-          valor:v,
-          origem:"IMPORTACAO_EXCEL",
-          arquivo_origem:file.name
+          valor: v,
+          origem: "IMPORTACAO_EXCEL",
+          arquivo_origem: file.name
         });
       });
 
-      preview.innerHTML += `<div class="file-box"><strong>${file.name}</strong></div>`;
+      preview.innerHTML += `
+        <div class="file-box">
+          <strong>${file.name}</strong><br>
+          ${Object.values(mapa).length} registros
+        </div>
+      `;
       resolve();
     };
 
@@ -165,50 +242,69 @@ function processarArquivo(file, data, preview){
 }
 
 function detectarEmpresa(rows){
-  const linha = rows.find(r => typeof r[0]==="string" && r[0].toLowerCase().includes("loja"));
-  return linha ? linha[0].split(":").pop().trim().toUpperCase() : null;
+  const linha = rows.find(r =>
+    typeof r[0] === "string" &&
+    r[0].toLowerCase().includes("loja")
+  );
+  return linha
+    ? linha[0].split(":").pop().trim().toUpperCase()
+    : null;
 }
 
 async function salvarTudo(){
-  if(!registros.length) return alert("Nada para salvar");
+  if(!registros.length){
+    alert("Nada para salvar");
+    return;
+  }
+
   const { error } = await sb.from("resumo_entradas").insert(registros);
+
   document.getElementById("msg").innerHTML = error
     ? `<div class="error">Erro ao salvar</div>`
-    : `<div class="success">Importação concluída</div>`;
+    : `<div class="success">Importação concluída com sucesso</div>`;
 }
 
-/* ===== MODAL ===== */
+/* ================= MODAL ================= */
 
-function abrirModal(){ document.getElementById("modal").style.display="flex"; listarImportacoes(); }
-function fecharModal(){ document.getElementById("modal").style.display="none"; }
+function abrirModal(){
+  document.getElementById("modal").style.display = "flex";
+  listarImportacoes();
+}
+function fecharModal(){
+  document.getElementById("modal").style.display = "none";
+}
 
 async function listarImportacoes(){
   const emp = document.getElementById("fEmpresa").value;
   const data = document.getElementById("fData").value;
 
-  let q = sb.from("resumo_entradas")
+  let q = sb
+    .from("resumo_entradas")
     .select("import_id,empresa,data_lancamento,arquivo_origem")
     .order("data_lancamento",{ascending:false});
 
   if(emp) q = q.eq("empresa",emp);
   if(data) q = q.eq("data_lancamento",data);
 
-  const { data:rows } = await q;
-
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
+  const { data: rows } = await q;
 
   const grupos = {};
   rows.forEach(r => grupos[r.import_id] = r);
+
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
 
   Object.values(grupos).forEach(g=>{
     lista.innerHTML += `
       <div class="item">
         <strong>${g.empresa}</strong><br>
-        ${g.data_lancamento}<br>
-        ${g.arquivo_origem}
-        <button onclick="excluirImportacao('${g.import_id}')">Excluir Importação</button>
-      </div>`;
+        Data: ${g.data_lancamento}<br>
+        Arquivo: ${g.arquivo_origem}
+        <button onclick="excluirImportacao('${g.import_id}')">
+          Excluir Importação
+        </button>
+      </div>
+    `;
   });
 
   const empresas = [...new Set(rows.map(r=>r.empresa))];
@@ -218,7 +314,7 @@ async function listarImportacoes(){
 }
 
 async function excluirImportacao(importId){
-  if(!confirm("Excluir TODA a importação?")) return;
+  if(!confirm("Excluir TODA a importação selecionada?")) return;
   await sb.from("resumo_entradas").delete().eq("import_id",importId);
   listarImportacoes();
 }
