@@ -13,9 +13,10 @@
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 
-<!-- FLATPICKR (DATE RANGE) -->
+<!-- FLATPICKR (RANGE) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 
 <!-- CHART -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -76,7 +77,11 @@ select,input{
   border-radius:18px;
   padding:12px;
 }
-.chart-box h3{font-size:13px;color:var(--muted);margin-bottom:8px}
+.chart-box h3{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
 
 /* CARDS */
 .cards{
@@ -110,7 +115,7 @@ select,input{
 <!-- FILTROS -->
 <div class="filters">
 
-  <!-- EMPRESA (INSTANTÂNEO + SALVO) -->
+  <!-- EMPRESA -->
   <select id="empresa">
     <option value="todas">Todas as empresas</option>
     <option value="Grupo DV">Grupo DV</option>
@@ -119,7 +124,7 @@ select,input{
   </select>
 
   <!-- PERÍODO (UM ÚNICO CALENDÁRIO) -->
-  <input id="periodo" placeholder="Selecione o período">
+  <input id="periodo" placeholder="Selecione o período (dd/mm/aaaa)">
 </div>
 
 <!-- GRAFICO -->
@@ -147,7 +152,7 @@ select,input{
 </div>
 
 <script>
-/* ===== MOCK (SUPABASE DEPOIS) ===== */
+/* ===== MOCK (SUPABASE ENTRA DEPOIS) ===== */
 const dados = [
   {empresa:'Grupo DV', data:'2024-06-01', entrada:1200, saida:400},
   {empresa:'Grupo DV', data:'2024-06-02', entrada:1800, saida:600},
@@ -173,14 +178,14 @@ empresaSelect.addEventListener("change", ()=>{
   aplicarFiltros();
 });
 
-/* ===== CALENDÁRIO ÚNICO (RANGE) ===== */
+/* ===== CALENDÁRIO RANGE (DD/MM/AAAA) ===== */
 flatpickr("#periodo",{
   mode:"range",
-  dateFormat:"Y-m-d",
-  locale:"pt",
+  dateFormat:"d/m/Y",       // VISUAL
+  locale:flatpickr.l10ns.pt,
   onClose:(datas)=>{
     if(datas.length === 2){
-      dataInicio = datas[0].toISOString().split("T")[0];
+      dataInicio = datas[0].toISOString().split("T")[0]; // ISO
       dataFim = datas[1].toISOString().split("T")[0];
       aplicarFiltros();
     }
@@ -224,8 +229,20 @@ function atualizarDashboard(lista){
     data:{
       labels,
       datasets:[
-        {label:"Entradas",data:entradas,borderColor:"#22c55e",tension:.4},
-        {label:"Saídas",data:saidas,borderColor:"#ef4444",tension:.4}
+        {
+          label:"Entradas",
+          data:entradas,
+          borderColor:"#22c55e",
+          backgroundColor:"rgba(34,197,94,.15)",
+          tension:.4
+        },
+        {
+          label:"Saídas",
+          data:saidas,
+          borderColor:"#ef4444",
+          backgroundColor:"rgba(239,68,68,.15)",
+          tension:.4
+        }
       ]
     },
     options:{
