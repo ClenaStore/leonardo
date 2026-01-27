@@ -132,7 +132,17 @@ const sb = supabase.createClient(
 );
 
 /* ================= CONFIG ================= */
-const MODALIDADES_NAO_FINANCEIRAS = ["CONSUMO INTERNO","BONIFICAÇÃO"];
+const MODALIDADES_NAO_FINANCEIRAS = [
+  "CONSUMO",
+  "BONIFICA",
+  "ERRO",
+  "SEM FATURAMENTO",
+  "FUNCION",
+  "SÓCIO",
+  "SOCIO",
+  "CONVÊNIO",
+  "CONVENIO"
+];
 
 /* ================= UTIL ================= */
 const limparNomeEmpresa = n => n.replace(/^\d+\s*-\s*/,"").trim();
@@ -224,16 +234,32 @@ function limparFiltros(){
 let chart;
 
 async function carregarDados(){
-  let q = sb.from("resumo_entradas").select("*").order("data_lancamento");
+  let todos = [];
+  let from = 0;
+  const step = 1000;
 
-  const emp = localStorage.getItem("EMPRESA_ATIVA");
-  if(emp && emp!=="todas") q = q.eq("empresa",emp);
+  while(true){
+    let q = sb
+      .from("resumo_entradas")
+      .select("*")
+      .order("data_lancamento")
+      .range(from, from + step - 1);
 
-  q = q.gte("data_lancamento",dataInicio)
-       .lte("data_lancamento",dataFim);
+    const emp = localStorage.getItem("EMPRESA_ATIVA");
+    if(emp && emp !== "todas") q = q.eq("empresa", emp);
 
-  const { data } = await q;
-  montarDashboard(data||[]);
+    q = q
+      .gte("data_lancamento", dataInicio)
+      .lte("data_lancamento", dataFim);
+
+    const { data } = await q;
+    if(!data || !data.length) break;
+
+    todos.push(...data);
+    from += step;
+  }
+
+  montarDashboard(todos);
 }
 
 /* ================= DASHBOARD ================= */
@@ -256,7 +282,11 @@ function montarDashboard(lista){
 
   const dias = Object.keys(porDia).length;
   ticketMedio.innerText =
-    dias ? `R$ ${(total/dias).toLocaleString("pt-BR",{dance:2})}` : "R$ 0,00";
+    dias ? `R$ ${(total/dias).toLocaleString("pt-BR",{
+  minimumFractionDigits:2,
+  maximumFractionDigits:2
+})
+}` : "R$ 0,00";
 
   informativas.innerHTML =
     Object.entries(info).map(([m,v])=>`${m}: R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`).join("<br>") || "—";
