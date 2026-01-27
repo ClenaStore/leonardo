@@ -101,17 +101,17 @@ const MODALIDADES_NAO_FINANCEIRAS = [
   "BONIFICAÇÃO"
 ];
 
-/* ================= DATA PADRÃO = ONTEM (LOCAL) ================= */
+/* ================= UTIL ================= */
+function limparNomeEmpresa(nome){
+  return nome.replace(/^\d+\s*-\s*/,"").trim();
+}
+
+/* ================= DATA PADRÃO = ONTEM ================= */
 function ontemISO(){
   const d = new Date();
-  d.setHours(12,0,0,0);
+  d.setHours(12,0,0,0); // evita bug de fuso
   d.setDate(d.getDate() - 1);
-
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2,"0");
-  const dd = String(d.getDate()).padStart(2,"0");
-
-  return `${yyyy}-${mm}-${dd}`;
+  return d.toISOString().slice(0,10);
 }
 
 let dataInicio = localStorage.getItem("DATA_INICIO") || ontemISO();
@@ -121,13 +121,13 @@ localStorage.setItem("DATA_INICIO", dataInicio);
 localStorage.setItem("DATA_FIM", dataFim);
 
 periodoLabel.innerText =
-  new Date(dataInicio + "T12:00").toLocaleDateString("pt-BR");
+  new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
 async function carregarEmpresas(){
   const { data } = await sb
     .from("resumo_entradas")
-    .select("empresa", { distinct:true });
+    .select("empresa");
 
   const select = document.getElementById("empresa");
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
@@ -135,7 +135,7 @@ async function carregarEmpresas(){
   [...new Set(data.map(d=>d.empresa))].forEach(e=>{
     const opt = document.createElement("option");
     opt.value = e;
-    opt.textContent = e;
+    opt.textContent = limparNomeEmpresa(e);
     select.appendChild(opt);
   });
 
