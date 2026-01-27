@@ -25,7 +25,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 <body>
 
 <div class="card">
-  <h2>Importar Resumo de Vendas (Mercatto / Delícia)</h2>
+  <h2>Importar Resumo de Vendas</h2>
 
   <input type="file" id="files" accept=".xls,.xlsx" multiple><br><br>
 
@@ -36,7 +36,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <div class="card">
-  <h3>Pré-visualização</h3>
+  <h3>Pré-visualização (por empresa)</h3>
   <div id="preview" class="preview">Nenhum arquivo processado.</div>
 </div>
 
@@ -52,7 +52,7 @@ const SUPABASE_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================= DATA PADRÃO = ONTEM ================= */
-(function(){
+(() => {
   const d = new Date();
   d.setDate(d.getDate() - 1);
   document.getElementById("data").value = d.toISOString().split("T")[0];
@@ -60,21 +60,22 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 /* ================= AGRUPAMENTO ================= */
 const categoriasAgrupadas = {
-  "CRÉDITO": ["credito", "cartao credito", "credito tef"],
-  "DÉBITO": ["debito", "cartao debito", "debito tef"],
-  "PIX": ["pix", "pix tef", "pix cnpj"],
+  "CRÉDITO": ["credito", "cartao credito", "credito tef", "credito pos", "credito delivery"],
+  "DÉBITO": ["debito", "cartao debito", "debito tef", "debito pos"],
+  "PIX": ["pix", "pix tef", "pix pos", "qrcode", "pix cnpj"],
   "DINHEIRO": ["dinheiro"],
-  "ONLINE": ["pagamento online", "refeicao"],
-  "CONSUMO INTERNO": ["funcionario", "consumo funcionarios"],
-  "MARKETING": ["marketing"],
+  "ONLINE": ["pagamento online", "pgto online", "online"],
+  "CONSUMO INTERNO": ["funcionario", "consumo"],
+  "VOUCHER": ["voucher"],
+  "CREDIÁRIO": ["crediario"],
   "OUTROS": []
 };
 
 const normalize = s =>
   (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 
-function agruparModalidade(texto){
-  const n = normalize(texto);
+function agruparModalidade(txt){
+  const n = normalize(txt);
   for(const cat in categoriasAgrupadas){
     if(categoriasAgrupadas[cat].some(v=>n.includes(v))) return cat;
   }
@@ -113,47 +114,55 @@ function processarArquivo(file, data, preview){
       const rows = XLSX.utils.sheet_to_json(ws,{header:1});
 
       let caixaAtual = null;
-      let registrosArquivo = [];
+      let porEmpresa = {
+        "EMPORIO MERCATTO": [],
+        "RESTAURANTE MERCATTO": []
+      };
 
-      rows.forEach(linha=>{
-        const col0 = linha[0];
-        const descricao = linha[1];
-        const valorRaw = linha[2];
+      rows.forEach(l=>{
+        const col0 = l[0];
+        const desc = l[1];
+        const valRaw = l[2];
 
-        // 🔹 Detecta CAIXA
+        // Detecta CAIXA
         if(typeof col0 === "string" && col0.includes("Caixa")){
           caixaAtual = parseInt(col0.replace(/\D/g,""));
           return;
         }
 
-        // ❌ Ignora totais
-        if(typeof descricao === "string" && descricao.includes("Total")) return;
+        // Ignora totais
+        if(typeof desc === "string" && desc.includes("Total")) return;
 
-        const valor = Number(String(valorRaw).replace(".","").replace(",","."));
-        if(!caixaAtual || !descricao || valor <= 0) return;
+        const valor = Number(String(valRaw).replace(".","").replace(",","."));
+        if(!caixaAtual || !desc || valor <= 0) return;
 
         const empresa = caixaAtual <= 5
           ? "EMPORIO MERCATTO"
           : "RESTAURANTE MERCATTO";
 
-        registrosArquivo.push({
+        porEmpresa[empresa].push({
           empresa,
           data,
-          modalidade: agruparModalidade(descricao),
+          modalidade: agruparModalidade(desc),
           valor,
           origem: "IMPORTACAO_EXCEL",
           arquivo_origem: file.name
         });
       });
 
-      todosRegistros.push(...registrosArquivo);
+      Object.entries(porEmpresa).forEach(([empresa, regs])=>{
+        if(!regs.length) return;
 
-      preview.innerHTML += `
-        <div class="file-box">
-          <strong>Arquivo:</strong> ${file.name}<br>
-          ${registrosArquivo.map(r=>`• ${r.empresa} — ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
-        </div>
-      `;
+        todosRegistros.push(...regs);
+
+        preview.innerHTML += `
+          <div class="file-box">
+            <strong>Arquivo:</strong> ${file.name}<br>
+            <strong>Empresa:</strong> ${empresa}<br>
+            ${regs.map(r=>`• ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
+          </div>
+        `;
+      });
 
       resolve();
     };
