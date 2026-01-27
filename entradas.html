@@ -81,33 +81,16 @@ const sb = createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
-/* ================= AGRUPAMENTO ================= */
-const categoriasAgrupadas = {
-  "crédito": ["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
-  "débito": ["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
-  "pix": ["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
-  "online": ["pagamento online","pagamentos online","refeicao","cart alimentacao"],
-  "consumo interno": ["funcionario","convenio empresa","consumo funcionarios","consumo musicos"],
-  "boleto": ["boleto"],
-  "crediário": ["crediario","crediario clientes"],
-  "voucher": ["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa"],
-  "dinheiro": ["dinheiro","pgto online dinheiro"],
-  "bonificação": ["bonificacao"],
-  "catálogo delivery": ["catalogo delivery","catálogo delivery"],
-  "consumo sócio": ["socio","consumo sócio","consumo socio"],
-  "marketing": ["marketing"],
-  "transferência bancária": ["transferencia bancar","transferencia bancaria"],
-  "erros garçom": ["erros garcons"],
-  "sem faturamento": ["sem faturamento"],
-  "outros": []
-};
-
 /* ================= FILTROS ================= */
 const EMPRESA = localStorage.getItem("EMPRESA_ATIVA") || "todas";
 const DATA_INICIO = localStorage.getItem("DATA_INICIO");
 const DATA_FIM = localStorage.getItem("DATA_FIM");
 
-const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
+/* ================= UTIL ================= */
+const BRL = v => Number(v).toLocaleString("pt-BR",{
+  minimumFractionDigits:2,
+  maximumFractionDigits:2
+});
 const fmtBR = d => d.split("-").reverse().join("/");
 
 document.getElementById("subtitulo").innerText =
@@ -115,27 +98,30 @@ document.getElementById("subtitulo").innerText =
 
 let chart;
 
-/* ================= LOAD ================= */
+/* ================= BUSCAR TODOS OS DADOS ================= */
 async function carregarDados(){
-  let q = sb.from("resumo_entradas")
-    .select("data_lancamento, modalidade, valor, empresa")
-    .order("data_lancamento",{ascending:true});
+  let todos = [];
+  let from = 0;
+  const step = 1000;
 
-  if(EMPRESA !== "todas") q = q.eq("empresa",EMPRESA);
-  if(DATA_INICIO) q = q.gte("data_lancamento",DATA_INICIO);
-  if(DATA_FIM) q = q.lte("data_lancamento",DATA_FIM);
+  while(true){
+    let q = sb.from("resumo_entradas")
+      .select("data_lancamento, modalidade, valor, empresa")
+      .order("data_lancamento",{ascending:true})
+      .range(from, from + step - 1);
 
-  const { data } = await q;
-  montarResumo(data || []);
-}
+    if(EMPRESA !== "todas") q = q.eq("empresa",EMPRESA);
+    if(DATA_INICIO) q = q.gte("data_lancamento",DATA_INICIO);
+    if(DATA_FIM) q = q.lte("data_lancamento",DATA_FIM);
 
-/* ================= NORMALIZAR ================= */
-function normalizarCategoria(mod){
-  const m = mod.toLowerCase();
-  for(const [cat,keys] of Object.entries(categoriasAgrupadas)){
-    if(keys.some(k => m.includes(k))) return cat;
+    const { data, error } = await q;
+    if(error || !data.length) break;
+
+    todos.push(...data);
+    from += step;
   }
-  return "outros";
+
+  montarResumo(todos);
 }
 
 /* ================= RESUMO ================= */
@@ -146,11 +132,13 @@ function montarResumo(lista){
 
   lista.forEach(l=>{
     const v = Number(l.valor);
-    const cat = normalizarCategoria(l.modalidade);
-
     total += v;
-    porDia[l.data_lancamento] = (porDia[l.data_lancamento] || 0) + v;
-    porCategoria[cat] = (porCategoria[cat] || 0) + v;
+
+    porDia[l.data_lancamento] =
+      (porDia[l.data_lancamento] || 0) + v;
+
+    porCategoria[l.modalidade] =
+      (porCategoria[l.modalidade] || 0) + v;
   });
 
   const dias = Object.keys(porDia).length;
@@ -184,6 +172,7 @@ function montarResumo(lista){
   });
 }
 
+/* INIT */
 carregarDados();
 </script>
 
