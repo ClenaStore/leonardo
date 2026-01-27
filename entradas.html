@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+
+<title>Resumo de Vendas</title>
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#0b0b0b;
+  --card:#151515;
+  --border:#242424;
+
+  --gold:#d4af37;
+  --green:#22c55e;
+  --red:#ef4444;
+
+  --text:#f5f5f5;
+  --muted:#9ca3af;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
+
+html,body{
+  width:100%;
+  height:100%;
+  background:var(--bg);
+  color:var(--text);
+  overflow:auto;
+  scrollbar-width:none;
+}
+body::-webkit-scrollbar{display:none}
+
+/* HEADER */
+.header{
+  padding:16px;
+}
+.header h2{
+  font-size:18px;
+  font-weight:800;
+}
+.header span{
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* CARDS */
+.cards{
+  padding:0 16px;
+  display:grid;
+  gap:12px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px;
+}
+.card .label{
+  font-size:12px;
+  color:var(--muted);
+}
+.card .value{
+  font-size:22px;
+  font-weight:800;
+  margin-top:6px;
+}
+.gold{color:var(--gold)}
+.green{color:var(--green)}
+.red{color:var(--red)}
+
+/* GRAFICO */
+.chart-box{
+  margin:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px;
+}
+.chart-box h3{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+
+/* LISTA */
+.lista{
+  padding:0 16px 24px;
+}
+.item{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px dashed var(--border);
+}
+.item span{
+  font-size:13px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>Resumo de Vendas</h2>
+  <span id="subtitulo">—</span>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Total de Vendas</div>
+    <div class="value gold" id="totalVendas">R$ 0,00</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Ticket Médio</div>
+    <div class="value green" id="ticketMedio">R$ 0,00</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Quantidade</div>
+    <div class="value" id="quantidade">0</div>
+  </div>
+</div>
+
+<div class="chart-box">
+  <h3>Vendas por dia</h3>
+  <canvas id="grafico" height="180"></canvas>
+</div>
+
+<div class="lista" id="listaCategorias"></div>
+
+<script>
+/* ===== FILTROS GLOBAIS (VINDO DO DASHBOARD) ===== */
+const EMPRESA = localStorage.getItem("EMPRESA_ATIVA") || "todas";
+const DATA_INICIO = localStorage.getItem("DATA_INICIO");
+const DATA_FIM = localStorage.getItem("DATA_FIM");
+
+/* ===== MOCK (SUPABASE DEPOIS) ===== */
+const vendas = [
+  {empresa:"Grupo DV", data:"2024-06-01", categoria:"PIX", valor:1200},
+  {empresa:"Grupo DV", data:"2024-06-01", categoria:"CRÉDITO", valor:800},
+  {empresa:"Grupo DV", data:"2024-06-02", categoria:"PIX", valor:600},
+  {empresa:"Empresa A", data:"2024-06-02", categoria:"DÉBITO", valor:500},
+  {empresa:"Grupo DV", data:"2024-06-03", categoria:"PIX", valor:900}
+];
+
+/* ===== UTIL ===== */
+const BRL = v => v.toLocaleString("pt-BR",{minimumFractionDigits:2});
+const fmtBR = iso => iso.split("-").reverse().join("/");
+
+/* ===== APLICA FILTRO ===== */
+const filtrado = vendas.filter(v =>
+  (EMPRESA === "todas" || v.empresa === EMPRESA) &&
+  (!DATA_INICIO || v.data >= DATA_INICIO) &&
+  (!DATA_FIM || v.data <= DATA_FIM)
+);
+
+/* ===== SUBTÍTULO ===== */
+document.getElementById("subtitulo").innerText =
+  `${EMPRESA} • ${DATA_INICIO ? fmtBR(DATA_INICIO) : "—"} até ${DATA_FIM ? fmtBR(DATA_FIM) : "—"}`;
+
+/* ===== KPIs ===== */
+let total = 0;
+const dias = new Set();
+
+filtrado.forEach(v=>{
+  total += v.valor;
+  dias.add(v.data);
+});
+
+totalVendas.innerText = `R$ ${BRL(total)}`;
+quantidade.innerText = filtrado.length;
+ticketMedio.innerText = filtrado.length
+  ? `R$ ${BRL(total / filtrado.length)}`
+  : "R$ 0,00";
+
+/* ===== AGRUPA POR DIA ===== */
+const porDia = {};
+filtrado.forEach(v=>{
+  porDia[v.data] = (porDia[v.data] || 0) + v.valor;
+});
+
+const labels = Object.keys(porDia).map(fmtBR);
+const valores = Object.values(porDia);
+
+/* ===== GRAFICO ===== */
+new Chart(grafico,{
+  type:"line",
+  data:{
+    labels,
+    datasets:[{
+      label:"Vendas",
+      data:valores,
+      borderColor:"#d4af37",
+      backgroundColor:"rgba(212,175,55,.15)",
+      tension:.4
+    }]
+  },
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      x:{ticks:{color:"#9ca3af"}},
+      y:{ticks:{color:"#9ca3af"}}
+    }
+  }
+});
+
+/* ===== AGRUPA POR CATEGORIA ===== */
+const porCat = {};
+filtrado.forEach(v=>{
+  porCat[v.categoria] = (porCat[v.categoria] || 0) + v.valor;
+});
+
+const lista = document.getElementById("listaCategorias");
+Object.entries(porCat).forEach(([cat,val])=>{
+  const div = document.createElement("div");
+  div.className="item";
+  div.innerHTML = `<span>${cat}</span><span>R$ ${BRL(val)}</span>`;
+  lista.appendChild(div);
+});
+</script>
+
+</body>
+</html>
