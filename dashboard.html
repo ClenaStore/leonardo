@@ -35,7 +35,7 @@ body::-webkit-scrollbar{display:none}
 .header h2{font-size:18px;font-weight:800}
 .header span{font-size:12px;color:var(--muted)}
 .filters{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
-select,input,button{
+select,input{
   padding:12px;border-radius:12px;
   background:#0b0b0b;border:1px solid var(--border);
   color:var(--text)
@@ -64,7 +64,6 @@ select,input,button{
 
 <div class="filters">
   <select id="empresa"></select>
-
   <input id="periodo" placeholder="Período (dd/mm/aaaa)">
 </div>
 
@@ -79,7 +78,7 @@ select,input,button{
   </div>
 
   <div class="card">
-    <div class="info">Ticket Médio</div>
+    <div class="info">Ticket Médio Diário</div>
     <div class="value total" id="ticketMedio">R$ 0,00</div>
   </div>
 
@@ -102,10 +101,21 @@ const MODALIDADES_NAO_FINANCEIRAS = [
   "BONIFICAÇÃO"
 ];
 
-/* ================= ESTADO ================= */
-let dataInicio = localStorage.getItem("DATA_INICIO");
-let dataFim = localStorage.getItem("DATA_FIM");
-let chart;
+/* ================= DATA PADRÃO = ONTEM ================= */
+function ontemISO(){
+  const d = new Date();
+  d.setDate(d.getDate() - 1);
+  return d.toISOString().split("T")[0];
+}
+
+let dataInicio = localStorage.getItem("DATA_INICIO") || ontemISO();
+let dataFim = localStorage.getItem("DATA_FIM") || ontemISO();
+
+localStorage.setItem("DATA_INICIO", dataInicio);
+localStorage.setItem("DATA_FIM", dataFim);
+
+document.getElementById("periodoLabel").innerText =
+  new Date(dataInicio).toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
 async function carregarEmpresas(){
@@ -136,32 +146,35 @@ flatpickr("#periodo",{
   mode:"range",
   dateFormat:"d/m/Y",
   locale:flatpickr.l10ns.pt,
-  defaultDate: dataInicio && dataFim ? [
-    new Date(dataInicio),
-    new Date(dataFim)
-  ] : null,
+  defaultDate: [new Date(dataInicio), new Date(dataFim)],
   onClose:(d)=>{
     if(d.length===2){
       dataInicio = d[0].toISOString().split("T")[0];
       dataFim = d[1].toISOString().split("T")[0];
+
       localStorage.setItem("DATA_INICIO",dataInicio);
       localStorage.setItem("DATA_FIM",dataFim);
+
       periodoLabel.innerText =
         d[0].toLocaleDateString("pt-BR")+" a "+
         d[1].toLocaleDateString("pt-BR");
+
       carregarDados();
     }
   }
 });
 
 /* ================= DADOS ================= */
+let chart;
+
 async function carregarDados(){
   let q = sb.from("resumo_entradas").select("*").order("data_lancamento");
 
   const emp = localStorage.getItem("EMPRESA_ATIVA");
   if(emp && emp!=="todas") q = q.eq("empresa",emp);
-  if(dataInicio) q = q.gte("data_lancamento",dataInicio);
-  if(dataFim) q = q.lte("data_lancamento",dataFim);
+
+  q = q.gte("data_lancamento", dataInicio)
+       .lte("data_lancamento", dataFim);
 
   const { data } = await q;
   montarDashboard(data||[]);
@@ -170,7 +183,6 @@ async function carregarDados(){
 /* ================= DASHBOARD ================= */
 function montarDashboard(lista){
   let total = 0;
-  let count = 0;
   const porDia = {};
   const informativas = {};
 
@@ -182,16 +194,20 @@ function montarDashboard(lista){
     }
 
     total += Number(r.valor);
-    count++;
 
     porDia[r.data_lancamento] =
       (porDia[r.data_lancamento]||0)+Number(r.valor);
   });
 
-  totalEntradas.innerText = `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
-  ticketMedio.innerText = count
-    ? `R$ ${(total/count).toLocaleString("pt-BR",{minimumFractionDigits:2})}`
-    : "R$ 0,00";
+  const diasUnicos = Object.keys(porDia).length;
+
+  totalEntradas.innerText =
+    `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+
+  ticketMedio.innerText =
+    diasUnicos
+      ? `R$ ${(total/diasUnicos).toLocaleString("pt-BR",{minimumFractionDigits:2})}`
+      : "R$ 0,00";
 
   informativas.innerHTML = Object.entries(informativas)
     .map(([m,v])=>`${m}: R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`)
