@@ -60,13 +60,27 @@ body::-webkit-scrollbar{display:none}
   gap:10px;
 }
 
-select,input{
+select,input,button{
   padding:12px;
   border-radius:12px;
   background:#0b0b0b;
   border:1px solid var(--border);
   color:var(--text);
   font-size:13px;
+}
+
+.filtro-periodo{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+}
+
+.btn-limpar{
+  background:#1a1a1a;
+  color:var(--muted);
+  font-weight:700;
+  padding:0 14px;
+  cursor:pointer;
 }
 
 /* GRAFICO */
@@ -123,8 +137,11 @@ select,input{
     <option value="Empresa B">Empresa B</option>
   </select>
 
-  <!-- PERÍODO (UM ÚNICO CALENDÁRIO) -->
-  <input id="periodo" placeholder="Selecione o período (dd/mm/aaaa)">
+  <!-- PERÍODO + LIMPAR -->
+  <div class="filtro-periodo">
+    <input id="periodo" placeholder="Período (dd/mm/aaaa)">
+    <button class="btn-limpar" onclick="limparFiltros()">Limpar</button>
+  </div>
 </div>
 
 <!-- GRAFICO -->
@@ -152,7 +169,7 @@ select,input{
 </div>
 
 <script>
-/* ===== MOCK (SUPABASE ENTRA DEPOIS) ===== */
+/* ===== MOCK (SUPABASE DEPOIS) ===== */
 const dados = [
   {empresa:'Grupo DV', data:'2024-06-01', entrada:1200, saida:400},
   {empresa:'Grupo DV', data:'2024-06-02', entrada:1800, saida:600},
@@ -179,18 +196,26 @@ empresaSelect.addEventListener("change", ()=>{
 });
 
 /* ===== CALENDÁRIO RANGE (DD/MM/AAAA) ===== */
-flatpickr("#periodo",{
+const picker = flatpickr("#periodo",{
   mode:"range",
-  dateFormat:"d/m/Y",       // VISUAL
+  dateFormat:"d/m/Y",
   locale:flatpickr.l10ns.pt,
   onClose:(datas)=>{
     if(datas.length === 2){
-      dataInicio = datas[0].toISOString().split("T")[0]; // ISO
+      dataInicio = datas[0].toISOString().split("T")[0];
       dataFim = datas[1].toISOString().split("T")[0];
       aplicarFiltros();
     }
   }
 });
+
+/* ===== LIMPAR ===== */
+function limparFiltros(){
+  dataInicio = null;
+  dataFim = null;
+  picker.clear();
+  aplicarFiltros();
+}
 
 /* ===== FILTRO ===== */
 function aplicarFiltros(){
