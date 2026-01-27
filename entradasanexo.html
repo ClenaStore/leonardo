@@ -13,12 +13,22 @@
 <style>
 body{margin:0;padding:20px;background:#0b0b0b;color:#fff;font-family:Inter}
 .card{background:#151515;border:1px solid #242424;border-radius:18px;padding:16px;margin-bottom:16px}
-input,button{width:100%;padding:12px;border-radius:12px;border:1px solid #242424;background:#0b0b0b;color:#fff}
+input,select,button{width:100%;padding:12px;border-radius:12px;border:1px solid #242424;background:#0b0b0b;color:#fff}
 button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 .preview{font-size:13px;color:#cbd5f5;line-height:1.6}
 .file-box{border-top:1px dashed #333;padding-top:12px;margin-top:12px}
 .success{color:#22c55e}
 .error{color:#ef4444}
+
+/* MODAL */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99}
+.modal-content{background:#151515;border-radius:18px;padding:16px;width:100%;max-width:520px;max-height:80vh;overflow:auto}
+.modal-header{display:flex;justify-content:space-between;align-items:center}
+.modal h3{margin:0}
+.close{cursor:pointer;font-size:20px}
+.item{border-bottom:1px dashed #333;padding:10px 0}
+.item button{margin-top:6px;background:#ef4444;color:#fff}
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
 </style>
 </head>
 
@@ -42,7 +52,27 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 
 <div class="card">
   <button onclick="salvarTudo()">Salvar no Sistema</button>
+  <button style="margin-top:8px" onclick="abrirModal()">Ver Importações</button>
   <div id="msg"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>Importações Registradas</h3>
+      <span class="close" onclick="fecharModal()">✕</span>
+    </div>
+
+    <div class="filters">
+      <select id="fEmpresa" onchange="listarImportacoes()">
+        <option value="">Todas Empresas</option>
+      </select>
+      <input type="date" id="fData" onchange="listarImportacoes()">
+    </div>
+
+    <div id="lista"></div>
+  </div>
 </div>
 
 <script>
@@ -59,6 +89,8 @@ const sb = supabase.createClient(
 })();
 
 let registros = [];
+
+/* ================= IMPORTAÇÃO (SEU CÓDIGO ORIGINAL) ================= */
 
 async function processarArquivos(){
   const files = document.getElementById("files").files;
@@ -82,9 +114,8 @@ function processarArquivo(file, data, preview){
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws,{header:1});
 
-      let empresaArquivo = detectarEmpresa(rows); // null se for Mercatto
+      let empresaArquivo = detectarEmpresa(rows);
       let caixaAtual = null;
-
       const mapa = {};
 
       rows.forEach(l=>{
@@ -103,40 +134,21 @@ function processarArquivo(file, data, preview){
 
         if(!empresaArquivo){
           if(!caixaAtual) return;
-          empresaFinal = caixaAtual <= 5
-            ? "EMPORIO MERCATTO"
-            : "RESTAURANTE MERCATTO";
+          empresaFinal = caixaAtual <= 5 ? "EMPORIO MERCATTO" : "RESTAURANTE MERCATTO";
         }
 
         const key = `${data}|${empresaFinal}|${caixaAtual||0}|${modalidade}`;
-
         mapa[key] = (mapa[key] || 0) + valor;
       });
 
       const regs = Object.entries(mapa).map(([k,v])=>{
         const [data_lancamento,empresa,caixa,modalidade] = k.split("|");
-        return {
-          data_lancamento,
-          empresa,
-          caixa: Number(caixa) || null,
-          modalidade,
-          valor: v,
-          origem: "IMPORTACAO_EXCEL",
-          arquivo_origem: file.name
-        };
+        return {data_lancamento,empresa,caixa:Number(caixa)||null,modalidade,valor:v,origem:"IMPORTACAO_EXCEL",arquivo_origem:file.name};
       });
 
       registros.push(...regs);
 
-      preview.innerHTML += `
-        <div class="file-box">
-          <strong>${file.name}</strong><br>
-          ${regs.map(r =>
-            `• ${r.empresa}${r.caixa ? " | Caixa "+r.caixa : ""} | ${r.modalidade}: R$ ${r.valor.toFixed(2)}`
-          ).join("<br>")}
-        </div>
-      `;
-
+      preview.innerHTML += `<div class="file-box"><strong>${file.name}</strong><br>${regs.map(r=>`• ${r.empresa} | ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}</div>`;
       resolve();
     };
 
@@ -150,16 +162,55 @@ function detectarEmpresa(rows){
 }
 
 async function salvarTudo(){
-  if(!registros.length){
-    alert("Nada para salvar");
-    return;
-  }
-
+  if(!registros.length) return alert("Nada para salvar");
   const { error } = await sb.from("resumo_entradas").insert(registros);
+  document.getElementById("msg").innerHTML = error ? `<div class="error">Erro ao salvar</div>` : `<div class="success">Importação concluída</div>`;
+}
 
-  document.getElementById("msg").innerHTML = error
-    ? `<div class="error">Erro ao salvar</div>`
-    : `<div class="success">Importação concluída com sucesso</div>`;
+/* ================= MODAL + LISTAGEM ================= */
+
+function abrirModal(){ document.getElementById("modal").style.display="flex"; listarImportacoes(); }
+function fecharModal(){ document.getElementById("modal").style.display="none"; }
+
+async function listarImportacoes(){
+  const emp = document.getElementById("fEmpresa").value;
+  const data = document.getElementById("fData").value;
+
+  let q = sb.from("resumo_entradas").select("empresa,data_lancamento,arquivo_origem").order("data_lancamento",{ascending:false});
+
+  if(emp) q = q.eq("empresa",emp);
+  if(data) q = q.eq("data_lancamento",data);
+
+  const { data:rows } = await q;
+
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  const grupos = {};
+  rows.forEach(r=>{
+    const k = `${r.data_lancamento}|${r.empresa}|${r.arquivo_origem}`;
+    grupos[k] = r;
+  });
+
+  Object.values(grupos).forEach(g=>{
+    lista.innerHTML += `
+      <div class="item">
+        <strong>${g.empresa}</strong><br>
+        ${g.data_lancamento}<br>
+        ${g.arquivo_origem}
+        <button onclick="excluirImportacao('${g.data_lancamento}','${g.empresa}','${g.arquivo_origem}')">Excluir Importação</button>
+      </div>
+    `;
+  });
+
+  const empresas = [...new Set(rows.map(r=>r.empresa))];
+  document.getElementById("fEmpresa").innerHTML = `<option value="">Todas Empresas</option>` + empresas.map(e=>`<option>${e}</option>`).join("");
+}
+
+async function excluirImportacao(data,empresa,arquivo){
+  if(!confirm("Excluir TODA a importação?")) return;
+  await sb.from("resumo_entradas").delete().eq("data_lancamento",data).eq("empresa",empresa).eq("arquivo_origem",arquivo);
+  listarImportacoes();
 }
 </script>
 
