@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+
+<title>Dashboard Financeiro</title>
+
+<meta name="viewport"
+      content="width=device-width,
+               initial-scale=1,
+               maximum-scale=1,
+               user-scalable=no">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0b0b0b;
+  --card:#141414;
+  --border:#242424;
+
+  --gold:#d4af37;
+  --green:#22c55e;
+  --red:#ef4444;
+  --text:#f5f5f5;
+  --muted:#9ca3af;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:Inter,system-ui;
+}
+
+html,body{
+  width:100%;
+  height:100%;
+  background:var(--bg);
+  color:var(--text);
+}
+
+/* HEADER */
+.header{
+  padding:16px;
+}
+
+.header h2{
+  font-size:18px;
+  font-weight:800;
+  margin-bottom:4px;
+}
+
+.header span{
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* FILTROS */
+.filters{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:0 16px 16px;
+}
+
+.filters select,
+.filters input{
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  background:#0b0b0b;
+  border:1px solid var(--border);
+  color:var(--text);
+  font-size:13px;
+}
+
+/* CARDS */
+.cards{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:12px;
+  padding:0 16px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:16px;
+}
+
+.card .label{
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:6px;
+}
+
+.card .value{
+  font-size:22px;
+  font-weight:800;
+}
+
+/* CORES */
+.total{color:var(--gold)}
+.entrada{color:var(--green)}
+.saida{color:var(--red)}
+
+/* LISTA */
+.list{
+  margin-top:16px;
+  padding:0 16px 24px;
+}
+
+.list h3{
+  font-size:14px;
+  margin-bottom:8px;
+}
+
+.item{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:12px 14px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  margin-bottom:8px;
+}
+
+.item .info{
+  display:flex;
+  flex-direction:column;
+}
+
+.item .info strong{
+  font-size:13px;
+}
+
+.item .info span{
+  font-size:11px;
+  color:var(--muted);
+}
+
+.item .valor{
+  font-weight:700;
+}
+
+/* FOOTER SPACE (respiro do iframe) */
+.footer-space{
+  height:20px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <h2>Dashboard Financeiro</h2>
+  <span>Relatório consolidado por empresa</span>
+</div>
+
+<!-- FILTROS -->
+<div class="filters">
+  <select>
+    <option>Todas as empresas</option>
+    <option>Grupo DV</option>
+    <option>Empresa A</option>
+    <option>Empresa B</option>
+  </select>
+
+  <input type="month">
+</div>
+
+<!-- CARDS -->
+<div class="cards">
+  <div class="card">
+    <div class="label">Faturamento Total</div>
+    <div class="value total">R$ 125.430,00</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Entradas</div>
+    <div class="value entrada">R$ 162.800,00</div>
+  </div>
+
+  <div class="card">
+    <div class="label">Saídas</div>
+    <div class="value saida">R$ 37.370,00</div>
+  </div>
+</div>
+
+<!-- LISTA -->
+<div class="list">
+  <h3>Resumo por empresa</h3>
+
+  <div class="item">
+    <div class="info">
+      <strong>Grupo DV</strong>
+      <span>Período atual</span>
+    </div>
+    <div class="valor total">R$ 58.200,00</div>
+  </div>
+
+  <div class="item">
+    <div class="info">
+      <strong>Empresa A</strong>
+      <span>Período atual</span>
+    </div>
+    <div class="valor entrada">R$ 42.100,00</div>
+  </div>
+
+  <div class="item">
+    <div class="info">
+      <strong>Empresa B</strong>
+      <span>Período atual</span>
+    </div>
+    <div class="valor saida">R$ 20.900,00</div>
+  </div>
+</div>
+
+<div class="footer-space"></div>
+
+</body>
+</html>
