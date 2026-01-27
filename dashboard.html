@@ -239,11 +239,13 @@ async function carregarDados(){
   const step = 1000;
 
   while(true){
-    let q = sb
-      .from("resumo_entradas")
-      .select("*")
-      .order("data_lancamento")
-      .range(from, from + step - 1);
+let q = sb
+  .from("resumo_entradas")
+  .select("*")
+  .order("data_lancamento", { ascending: true })
+  .order("id", { ascending: true })
+  .range(from, from + step - 1);
+
 
     const emp = localStorage.getItem("EMPRESA_ATIVA");
     if(emp && emp !== "todas") q = q.eq("empresa", emp);
