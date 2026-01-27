@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Importar Resumo de Vendas</title>
 
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
@@ -17,18 +17,51 @@ input,select,button{width:100%;padding:12px;border-radius:12px;border:1px solid 
 button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 .preview{font-size:13px;color:#cbd5f5;line-height:1.6}
 .file-box{border-top:1px dashed #333;padding-top:12px;margin-top:12px}
+
 .success{color:#22c55e}
 .error{color:#ef4444}
 
 /* MODAL */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:99}
-.modal-content{background:#151515;border-radius:18px;padding:16px;width:100%;max-width:520px;max-height:80vh;overflow:auto}
-.modal-header{display:flex;justify-content:space-between;align-items:center}
-.modal h3{margin:0}
+.modal{
+  position:fixed; inset:0;
+  background:rgba(0,0,0,.85);
+  display:none; align-items:center; justify-content:center;
+  z-index:100;
+}
+.modal-content{
+  background:#151515;
+  border-radius:20px;
+  padding:16px;
+  width:100%;
+  max-width:540px;
+  max-height:85vh;
+  overflow:auto;
+  animation:fadeUp .25s ease;
+}
+@keyframes fadeUp{
+  from{transform:translateY(20px);opacity:0}
+  to{transform:none;opacity:1}
+}
+.modal-header{
+  display:flex;justify-content:space-between;align-items:center;
+  margin-bottom:10px
+}
 .close{cursor:pointer;font-size:20px}
-.item{border-bottom:1px dashed #333;padding:10px 0}
-.item button{margin-top:6px;background:#ef4444;color:#fff}
-.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
+.item{
+  border:1px solid #242424;
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:10px
+}
+.item button{
+  background:#ef4444;color:#fff;margin-top:8px
+}
+.filters{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-bottom:12px
+}
 </style>
 </head>
 
@@ -36,7 +69,6 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 
 <div class="card">
   <h2>Importar Resumo de Vendas</h2>
-
   <input type="file" id="files" accept=".xls,.xlsx" multiple><br><br>
 
   <label>Data do lançamento</label>
@@ -81,6 +113,11 @@ const sb = supabase.createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
+const uuid = () => crypto.randomUUID();
+
+let registros = [];
+let importIdAtual = null;
+
 // data padrão = ontem
 (() => {
   const d = new Date();
@@ -88,9 +125,7 @@ const sb = supabase.createClient(
   document.getElementById("data").value = d.toISOString().split("T")[0];
 })();
 
-let registros = [];
-
-/* ================= IMPORTAÇÃO (SEU CÓDIGO ORIGINAL) ================= */
+/* ================= IMPORTAÇÃO ================= */
 
 async function processarArquivos(){
   const files = document.getElementById("files").files;
@@ -98,6 +133,7 @@ async function processarArquivos(){
   const preview = document.getElementById("preview");
 
   registros = [];
+  importIdAtual = uuid();
   preview.innerHTML = "";
 
   for(const file of files){
@@ -131,24 +167,30 @@ function processarArquivo(file, data, preview){
         if(!modalidade || !valor || valor <= 0) return;
 
         let empresaFinal = empresaArquivo;
-
         if(!empresaArquivo){
           if(!caixaAtual) return;
           empresaFinal = caixaAtual <= 5 ? "EMPORIO MERCATTO" : "RESTAURANTE MERCATTO";
         }
 
-        const key = `${data}|${empresaFinal}|${caixaAtual||0}|${modalidade}`;
+        const key = `${empresaFinal}|${modalidade}|${caixaAtual||0}`;
         mapa[key] = (mapa[key] || 0) + valor;
       });
 
-      const regs = Object.entries(mapa).map(([k,v])=>{
-        const [data_lancamento,empresa,caixa,modalidade] = k.split("|");
-        return {data_lancamento,empresa,caixa:Number(caixa)||null,modalidade,valor:v,origem:"IMPORTACAO_EXCEL",arquivo_origem:file.name};
+      Object.entries(mapa).forEach(([k,v])=>{
+        const [empresa,modalidade,caixa] = k.split("|");
+        registros.push({
+          import_id: importIdAtual,
+          data_lancamento: data,
+          empresa,
+          caixa: Number(caixa)||null,
+          modalidade,
+          valor: v,
+          origem:"IMPORTACAO_EXCEL",
+          arquivo_origem:file.name
+        });
       });
 
-      registros.push(...regs);
-
-      preview.innerHTML += `<div class="file-box"><strong>${file.name}</strong><br>${regs.map(r=>`• ${r.empresa} | ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}</div>`;
+      preview.innerHTML += `<div class="file-box"><strong>${file.name}</strong> (${registros.length} registros)</div>`;
       resolve();
     };
 
@@ -157,17 +199,19 @@ function processarArquivo(file, data, preview){
 }
 
 function detectarEmpresa(rows){
-  const linha = rows.find(r => typeof r[0] === "string" && r[0].toLowerCase().includes("loja"));
+  const linha = rows.find(r => typeof r[0]==="string" && r[0].toLowerCase().includes("loja"));
   return linha ? linha[0].split(":").pop().trim().toUpperCase() : null;
 }
 
 async function salvarTudo(){
   if(!registros.length) return alert("Nada para salvar");
   const { error } = await sb.from("resumo_entradas").insert(registros);
-  document.getElementById("msg").innerHTML = error ? `<div class="error">Erro ao salvar</div>` : `<div class="success">Importação concluída</div>`;
+  document.getElementById("msg").innerHTML = error
+    ? `<div class="error">Erro ao salvar</div>`
+    : `<div class="success">Importação concluída</div>`;
 }
 
-/* ================= MODAL + LISTAGEM ================= */
+/* ================= MODAL ================= */
 
 function abrirModal(){ document.getElementById("modal").style.display="flex"; listarImportacoes(); }
 function fecharModal(){ document.getElementById("modal").style.display="none"; }
@@ -176,40 +220,43 @@ async function listarImportacoes(){
   const emp = document.getElementById("fEmpresa").value;
   const data = document.getElementById("fData").value;
 
-  let q = sb.from("resumo_entradas").select("empresa,data_lancamento,arquivo_origem").order("data_lancamento",{ascending:false});
+  let q = sb.from("resumo_entradas")
+    .select("import_id,empresa,data_lancamento,arquivo_origem")
+    .order("data_lancamento",{ascending:false});
 
   if(emp) q = q.eq("empresa",emp);
   if(data) q = q.eq("data_lancamento",data);
 
   const { data:rows } = await q;
 
-  const lista = document.getElementById("lista");
-  lista.innerHTML = "";
-
   const grupos = {};
   rows.forEach(r=>{
-    const k = `${r.data_lancamento}|${r.empresa}|${r.arquivo_origem}`;
-    grupos[k] = r;
+    grupos[r.import_id] = r;
   });
+
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
 
   Object.values(grupos).forEach(g=>{
     lista.innerHTML += `
       <div class="item">
         <strong>${g.empresa}</strong><br>
-        ${g.data_lancamento}<br>
-        ${g.arquivo_origem}
-        <button onclick="excluirImportacao('${g.data_lancamento}','${g.empresa}','${g.arquivo_origem}')">Excluir Importação</button>
+        Data: ${g.data_lancamento}<br>
+        Arquivo: ${g.arquivo_origem}
+        <button onclick="excluirImportacao('${g.import_id}')">Excluir Importação</button>
       </div>
     `;
   });
 
   const empresas = [...new Set(rows.map(r=>r.empresa))];
-  document.getElementById("fEmpresa").innerHTML = `<option value="">Todas Empresas</option>` + empresas.map(e=>`<option>${e}</option>`).join("");
+  document.getElementById("fEmpresa").innerHTML =
+    `<option value="">Todas Empresas</option>` +
+    empresas.map(e=>`<option>${e}</option>`).join("");
 }
 
-async function excluirImportacao(data,empresa,arquivo){
-  if(!confirm("Excluir TODA a importação?")) return;
-  await sb.from("resumo_entradas").delete().eq("data_lancamento",data).eq("empresa",empresa).eq("arquivo_origem",arquivo);
+async function excluirImportacao(importId){
+  if(!confirm("Excluir TODA a importação selecionada?")) return;
+  await sb.from("resumo_entradas").delete().eq("import_id",importId);
   listarImportacoes();
 }
 </script>
