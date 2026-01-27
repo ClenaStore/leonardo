@@ -101,11 +101,17 @@ const MODALIDADES_NAO_FINANCEIRAS = [
   "BONIFICAÇÃO"
 ];
 
-/* ================= DATA PADRÃO = ONTEM ================= */
+/* ================= DATA PADRÃO = ONTEM (LOCAL) ================= */
 function ontemISO(){
   const d = new Date();
+  d.setHours(12,0,0,0);
   d.setDate(d.getDate() - 1);
-  return d.toISOString().split("T")[0];
+
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2,"0");
+  const dd = String(d.getDate()).padStart(2,"0");
+
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 let dataInicio = localStorage.getItem("DATA_INICIO") || ontemISO();
@@ -114,8 +120,8 @@ let dataFim = localStorage.getItem("DATA_FIM") || ontemISO();
 localStorage.setItem("DATA_INICIO", dataInicio);
 localStorage.setItem("DATA_FIM", dataFim);
 
-document.getElementById("periodoLabel").innerText =
-  new Date(dataInicio).toLocaleDateString("pt-BR");
+periodoLabel.innerText =
+  new Date(dataInicio + "T12:00").toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
 async function carregarEmpresas(){
@@ -146,11 +152,14 @@ flatpickr("#periodo",{
   mode:"range",
   dateFormat:"d/m/Y",
   locale:flatpickr.l10ns.pt,
-  defaultDate: [new Date(dataInicio), new Date(dataFim)],
+  defaultDate:[
+    new Date(dataInicio+"T12:00"),
+    new Date(dataFim+"T12:00")
+  ],
   onClose:(d)=>{
     if(d.length===2){
-      dataInicio = d[0].toISOString().split("T")[0];
-      dataFim = d[1].toISOString().split("T")[0];
+      dataInicio = d[0].toISOString().slice(0,10);
+      dataFim = d[1].toISOString().slice(0,10);
 
       localStorage.setItem("DATA_INICIO",dataInicio);
       localStorage.setItem("DATA_FIM",dataFim);
