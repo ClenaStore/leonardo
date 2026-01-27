@@ -41,11 +41,9 @@ html,body{
   background:var(--bg);
   color:var(--text);
   overflow:auto;
-  scrollbar-width:none;          /* Firefox */
+  scrollbar-width:none;
 }
-body::-webkit-scrollbar{
-  display:none;                  /* Chrome / Safari */
-}
+body::-webkit-scrollbar{display:none}
 
 /* HEADER */
 .header{
@@ -63,19 +61,56 @@ body::-webkit-scrollbar{
 /* FILTROS */
 .filters{
   padding:0 16px 16px;
-  display:grid;
-  grid-template-columns:1fr 1fr;
+  display:flex;
+  flex-direction:column;
   gap:10px;
 }
-.filters input,
+
 .filters select{
-  width:100%;
   padding:12px;
   border-radius:12px;
   background:#0b0b0b;
   border:1px solid var(--border);
   color:var(--text);
+}
+
+/* PERÍODO (UM BLOCO) */
+.periodo{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+
+.periodo input{
+  padding:12px;
+  border-radius:12px;
+  background:#0b0b0b;
+  border:1px solid var(--border);
+  color:var(--text);
+}
+
+.btn-aplicar{
+  padding:12px;
+  border-radius:14px;
+  border:none;
+  font-weight:800;
+  background:var(--gold);
+  color:#000;
+  cursor:pointer;
+}
+
+/* GRAFICO */
+.chart-box{
+  margin:0 16px 16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:12px;
+}
+.chart-box h3{
   font-size:13px;
+  margin-bottom:8px;
+  color:var(--muted);
 }
 
 /* CARDS */
@@ -104,23 +139,9 @@ body::-webkit-scrollbar{
 .entrada{color:var(--green)}
 .saida{color:var(--red)}
 
-/* GRAFICO */
-.chart-box{
-  margin:16px;
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:18px;
-  padding:12px;
-}
-.chart-box h3{
-  font-size:13px;
-  margin-bottom:8px;
-  color:var(--muted);
-}
-
 /* LISTA */
 .list{
-  padding:0 16px 24px;
+  padding:16px;
 }
 .list h3{
   font-size:14px;
@@ -136,16 +157,9 @@ body::-webkit-scrollbar{
   padding:12px 14px;
   margin-bottom:8px;
 }
-.item strong{
-  font-size:13px;
-}
-.item span{
-  font-size:11px;
-  color:var(--muted);
-}
-.item .valor{
-  font-weight:700;
-}
+.item strong{font-size:13px}
+.item span{font-size:11px;color:var(--muted)}
+.item .valor{font-weight:700}
 </style>
 </head>
 
@@ -154,20 +168,38 @@ body::-webkit-scrollbar{
 <!-- HEADER -->
 <div class="header">
   <h2>Dashboard Financeiro</h2>
-  <span>Evolução de ganhos e gastos</span>
+  <span>Relatório multi-empresas</span>
 </div>
 
 <!-- FILTROS -->
 <div class="filters">
-  <input type="date" id="dataInicio">
-  <input type="date" id="dataFim">
+
+  <select id="empresa">
+    <option value="todas">Todas as empresas</option>
+    <option value="Grupo DV">Grupo DV</option>
+    <option value="Empresa A">Empresa A</option>
+    <option value="Empresa B">Empresa B</option>
+  </select>
+
+  <div class="periodo">
+    <input type="date" id="dataInicio">
+    <input type="date" id="dataFim">
+  </div>
+
+  <button class="btn-aplicar" onclick="aplicarFiltros()">Aplicar filtros</button>
+</div>
+
+<!-- GRAFICO (LOGO ABAIXO DOS FILTROS) -->
+<div class="chart-box">
+  <h3>Evolução de ganhos e gastos</h3>
+  <canvas id="grafico" height="180"></canvas>
 </div>
 
 <!-- CARDS -->
 <div class="cards">
   <div class="card">
-    <div class="label">Faturamento Total</div>
-    <div class="value total" id="total">R$ 0,00</div>
+    <div class="label">Resultado</div>
+    <div class="value total" id="resultado">R$ 0,00</div>
   </div>
 
   <div class="card">
@@ -181,12 +213,6 @@ body::-webkit-scrollbar{
   </div>
 </div>
 
-<!-- GRAFICO -->
-<div class="chart-box">
-  <h3>Evolução no período</h3>
-  <canvas id="grafico" height="180"></canvas>
-</div>
-
 <!-- LISTA -->
 <div class="list">
   <h3>Resumo por empresa</h3>
@@ -194,44 +220,32 @@ body::-webkit-scrollbar{
   <div class="item">
     <div>
       <strong>Grupo DV</strong><br>
-      <span>Período selecionado</span>
+      <span>Período filtrado</span>
     </div>
     <div class="valor total">R$ 58.200,00</div>
-  </div>
-
-  <div class="item">
-    <div>
-      <strong>Empresa A</strong><br>
-      <span>Período selecionado</span>
-    </div>
-    <div class="valor entrada">R$ 42.100,00</div>
-  </div>
-
-  <div class="item">
-    <div>
-      <strong>Empresa B</strong><br>
-      <span>Período selecionado</span>
-    </div>
-    <div class="valor saida">R$ 20.900,00</div>
   </div>
 </div>
 
 <script>
-/* ====== DADOS MOCK (SUPABASE ENTRA AQUI DEPOIS) ====== */
+/* ===== MOCK DE DADOS (SUPABASE ENTRA DEPOIS) ===== */
 const dados = [
-  { data:'2024-06-01', entrada:1200, saida:400 },
-  { data:'2024-06-02', entrada:1800, saida:600 },
-  { data:'2024-06-03', entrada:1500, saida:300 },
-  { data:'2024-06-04', entrada:2200, saida:900 },
-  { data:'2024-06-05', entrada:2600, saida:1100 }
+  {empresa:'Grupo DV', data:'2024-06-01', entrada:1200, saida:400},
+  {empresa:'Grupo DV', data:'2024-06-02', entrada:1800, saida:600},
+  {empresa:'Empresa A', data:'2024-06-03', entrada:1500, saida:300},
+  {empresa:'Empresa B', data:'2024-06-04', entrada:2200, saida:900},
+  {empresa:'Grupo DV', data:'2024-06-05', entrada:2600, saida:1100}
 ];
 
-/* ====== FILTRO ====== */
-function filtrar(){
+let chart;
+
+/* ===== APLICA FILTROS ===== */
+function aplicarFiltros(){
+  const emp = empresa.value;
   const ini = dataInicio.value;
   const fim = dataFim.value;
 
   const filtrado = dados.filter(d =>
+    (emp === 'todas' || d.empresa === emp) &&
     (!ini || d.data >= ini) &&
     (!fim || d.data <= fim)
   );
@@ -239,9 +253,7 @@ function filtrar(){
   atualizarDashboard(filtrado);
 }
 
-/* ====== DASHBOARD ====== */
-let chart;
-
+/* ===== ATUALIZA DASHBOARD ===== */
 function atualizarDashboard(lista){
   let totalEntradas = 0;
   let totalSaidas = 0;
@@ -258,13 +270,13 @@ function atualizarDashboard(lista){
     saidas.push(d.saida);
   });
 
-  total.innerText = `R$ ${(totalEntradas - totalSaidas).toLocaleString('pt-BR')}`;
-  entradasEl.innerText = `R$ ${totalEntradas.toLocaleString('pt-BR')}`;
-  saidasEl.innerText = `R$ ${totalSaidas.toLocaleString('pt-BR')}`;
+  resultado.innerText = `R$ ${(totalEntradas - totalSaidas).toLocaleString('pt-BR')}`;
+  entradas.innerText = `R$ ${totalEntradas.toLocaleString('pt-BR')}`;
+  saidas.innerText = `R$ ${totalSaidas.toLocaleString('pt-BR')}`;
 
   if(chart) chart.destroy();
 
-  chart = new Chart(grafico, {
+  chart = new Chart(grafico,{
     type:'line',
     data:{
       labels,
@@ -286,10 +298,7 @@ function atualizarDashboard(lista){
       ]
     },
     options:{
-      responsive:true,
-      plugins:{
-        legend:{labels:{color:'#f5f5f5'}}
-      },
+      plugins:{legend:{labels:{color:'#f5f5f5'}}},
       scales:{
         x:{ticks:{color:'#9ca3af'}},
         y:{ticks:{color:'#9ca3af'}}
@@ -298,15 +307,8 @@ function atualizarDashboard(lista){
   });
 }
 
-/* ====== INIT ====== */
-const total = document.getElementById('total');
-const entradasEl = document.getElementById('entradas');
-const saidasEl = document.getElementById('saidas');
-
-dataInicio.addEventListener('change', filtrar);
-dataFim.addEventListener('change', filtrar);
-
-atualizarDashboard(dados);
+/* INIT */
+aplicarFiltros();
 </script>
 
 </body>
