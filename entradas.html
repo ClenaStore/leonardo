@@ -112,7 +112,6 @@ body::-webkit-scrollbar{display:none}
 /* ===== SUPABASE ===== */
 const SUPABASE_URL = "https://dxkszikemntfusfyrzos.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
-
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ===== FILTROS GLOBAIS ===== */
@@ -128,23 +127,23 @@ const fmtBR = iso => iso.split("-").reverse().join("/");
 document.getElementById("subtitulo").innerText =
   `${EMPRESA} • ${DATA_INICIO ? fmtBR(DATA_INICIO) : "—"} até ${DATA_FIM ? fmtBR(DATA_FIM) : "—"}`;
 
-/* ===== LOAD ===== */
 let chart;
 
+/* ===== LOAD ===== */
 async function carregarDados(){
   let query = sb
     .from("resumo_entradas")
-    .select("data, modalidade, valor, empresa")
-    .order("data",{ascending:true});
+    .select("data_lancamento, modalidade, valor, empresa")
+    .order("data_lancamento",{ascending:true});
 
   if(EMPRESA !== "todas"){
     query = query.eq("empresa", EMPRESA);
   }
   if(DATA_INICIO){
-    query = query.gte("data", DATA_INICIO);
+    query = query.gte("data_lancamento", DATA_INICIO);
   }
   if(DATA_FIM){
-    query = query.lte("data", DATA_FIM);
+    query = query.lte("data_lancamento", DATA_FIM);
   }
 
   const { data, error } = await query;
@@ -166,15 +165,19 @@ function montarResumo(lista){
 
   lista.forEach(l=>{
     total += Number(l.valor);
-    porDia[l.data] = (porDia[l.data] || 0) + Number(l.valor);
-    porModalidade[l.modalidade] = (porModalidade[l.modalidade] || 0) + Number(l.valor);
+    porDia[l.data_lancamento] =
+      (porDia[l.data_lancamento] || 0) + Number(l.valor);
+
+    porModalidade[l.modalidade] =
+      (porModalidade[l.modalidade] || 0) + Number(l.valor);
   });
 
   totalVendas.innerText = `R$ ${BRL(total)}`;
   quantidade.innerText = lista.length;
-  ticketMedio.innerText = lista.length ? `R$ ${BRL(total / lista.length)}` : "R$ 0,00";
+  ticketMedio.innerText =
+    lista.length ? `R$ ${BRL(total / lista.length)}` : "R$ 0,00";
 
-  // ===== GRAFICO =====
+  /* ===== GRAFICO ===== */
   const labels = Object.keys(porDia).map(fmtBR);
   const valores = Object.values(porDia);
 
@@ -199,7 +202,7 @@ function montarResumo(lista){
     }
   });
 
-  // ===== LISTA =====
+  /* ===== LISTA ===== */
   listaCategorias.innerHTML = "";
   Object.entries(porModalidade).forEach(([m,v])=>{
     const div = document.createElement("div");
