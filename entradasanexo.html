@@ -36,7 +36,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <div class="card">
-  <h3>Pré-visualização</h3>
+  <h3>Pré-visualização (AGRUPADA)</h3>
   <div id="preview" class="preview">Nenhum arquivo processado.</div>
 </div>
 
@@ -47,9 +47,10 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 
 <script>
 /* ================= SUPABASE ================= */
-const SUPABASE_URL = "https://dxkszikemntfusfyrzos.supabase.co";
-const SUPABASE_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sb = supabase.createClient(
+  "https://dxkszikemntfusfyrzos.supabase.co",
+  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
+);
 
 /* ================= DATA PADRÃO = ONTEM ================= */
 (() => {
@@ -58,21 +59,21 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
   document.getElementById("data").value = d.toISOString().split("T")[0];
 })();
 
-/* ================= MAPA DE MODALIDADES ================= */
+/* ================= MODALIDADES ================= */
 const categoriasAgrupadas = {
-  "CRÉDITO": ["credito", "cartao credito", "credito tef", "credito pos", "credito delivery"],
-  "DÉBITO": ["debito", "cartao debito", "debito tef", "debito pos"],
-  "PIX": ["pix", "pix tef", "pix pos", "qrcode", "pix cnpj"],
+  "CRÉDITO": ["credito","cartao credito","credito tef","credito pos","credito delivery"],
+  "DÉBITO": ["debito","cartao debito","debito tef","debito pos"],
+  "PIX": ["pix","pix tef","pix pos","qrcode","pix cnpj"],
   "DINHEIRO": ["dinheiro"],
-  "ONLINE": ["online", "pgto online"],
-  "CONSUMO INTERNO": ["consumo", "funcionario"],
+  "ONLINE": ["online","pgto online"],
+  "CONSUMO INTERNO": ["consumo","funcionario"],
   "VOUCHER": ["voucher"],
   "CREDIÁRIO": ["crediario"],
   "OUTROS": []
 };
 
 const normalize = s =>
-  (s||"").toString().normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+  (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 
 function agruparModalidade(txt){
   const n = normalize(txt);
@@ -83,7 +84,7 @@ function agruparModalidade(txt){
 }
 
 /* ================= VAR ================= */
-let registros = [];
+let registrosAgrupados = [];
 
 /* ================= PROCESSAR ================= */
 async function processarArquivos(){
@@ -96,7 +97,7 @@ async function processarArquivos(){
     return;
   }
 
-  registros = [];
+  registrosAgrupados = [];
   preview.innerHTML = "";
 
   for(const file of files){
@@ -108,65 +109,60 @@ function processarArquivo(file, data, preview){
   return new Promise(resolve=>{
     const reader = new FileReader();
 
-    reader.onload = e => {
+    reader.onload = e=>{
       const wb = XLSX.read(e.target.result,{type:"binary"});
       const ws = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(ws,{header:1});
 
-      let empresaDetectada = detectarEmpresaNormal(rows);
+      const empresaDetectada = detectarEmpresaNormal(rows);
       let caixaAtual = null;
 
-      const buffer = [];
+      const mapa = {};
 
       rows.forEach(l=>{
         const col0 = l[0];
         const desc = l[1];
         const valRaw = l[2];
 
-        if(typeof col0 === "string" && col0.toLowerCase().includes("caixa")){
+        if(typeof col0==="string" && col0.toLowerCase().includes("caixa")){
           caixaAtual = parseInt(col0.replace(/\D/g,""));
           return;
         }
 
         const valor = Number(String(valRaw).replace(".","").replace(",","."));
-        if(!desc || valor <= 0) return;
+        if(!desc || valor<=0 || !caixaAtual) return;
 
-        let empresaFinal = empresaDetectada;
+        const empresaFinal = empresaDetectada
+          ? empresaDetectada
+          : (caixaAtual<=5 ? "EMPORIO MERCATTO" : "RESTAURANTE MERCATTO");
 
-        // REGRA MERCATTO
-        if(!empresaDetectada){
-          if(!caixaAtual) return;
-          empresaFinal = caixaAtual <= 5
-            ? "EMPORIO MERCATTO"
-            : "RESTAURANTE MERCATTO";
-        }
+        const modalidade = agruparModalidade(desc);
+        const key = `${data}|${empresaFinal}|${caixaAtual}|${modalidade}`;
 
-        buffer.push({
-          data_lancamento: data,
-          empresa: empresaFinal,
-          caixa: caixaAtual,
-          modalidade: agruparModalidade(desc),
-          valor,
-          origem: "IMPORTACAO_EXCEL",
-          arquivo_origem: file.name
-        });
+        mapa[key] = (mapa[key]||0) + valor;
       });
 
-      registros.push(...buffer);
-
-      const agrupado = {};
-      buffer.forEach(r=>{
-        const k = `${r.empresa}_${r.modalidade}`;
-        agrupado[k] = (agrupado[k]||0) + r.valor;
+      const registrosArquivo = Object.entries(mapa).map(([k,v])=>{
+        const [data_lancamento,empresa,caixa,modalidade] = k.split("|");
+        return {
+          data_lancamento,
+          empresa,
+          caixa:Number(caixa),
+          modalidade,
+          valor:v,
+          origem:"IMPORTACAO_EXCEL",
+          arquivo_origem:file.name
+        };
       });
+
+      registrosAgrupados.push(...registrosArquivo);
 
       preview.innerHTML += `
         <div class="file-box">
-          <strong>Arquivo:</strong> ${file.name}<br>
-          ${Object.entries(agrupado).map(([k,v])=>{
-            const [emp,mod] = k.split("_");
-            return `• ${emp} — ${mod}: R$ ${v.toFixed(2)}`;
-          }).join("<br>")}
+          <strong>${file.name}</strong><br>
+          ${registrosArquivo.map(r=>
+            `• ${r.empresa} | Caixa ${r.caixa} | ${r.modalidade}: R$ ${r.valor.toFixed(2)}`
+          ).join("<br>")}
         </div>
       `;
 
@@ -178,22 +174,18 @@ function processarArquivo(file, data, preview){
 }
 
 function detectarEmpresaNormal(rows){
-  const linha = rows.find(r =>
-    typeof r[0] === "string" &&
-    r[0].toLowerCase().includes("loja")
-  );
-  if(!linha) return null;
-  return linha[0].split(":").pop().trim().toUpperCase();
+  const linha = rows.find(r=>typeof r[0]==="string" && r[0].toLowerCase().includes("loja"));
+  return linha ? linha[0].split(":").pop().trim().toUpperCase() : null;
 }
 
 /* ================= SALVAR ================= */
 async function salvarTudo(){
-  if(!registros.length){
+  if(!registrosAgrupados.length){
     alert("Nada para salvar");
     return;
   }
 
-  const { error } = await sb.from("resumo_entradas").insert(registros);
+  const { error } = await sb.from("resumo_entradas").insert(registrosAgrupados);
 
   document.getElementById("msg").innerHTML = error
     ? `<div class="error">Erro ao salvar</div>`
