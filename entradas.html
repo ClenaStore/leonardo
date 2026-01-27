@@ -22,7 +22,6 @@
   --border:#242424;
   --gold:#d4af37;
   --green:#22c55e;
-  --red:#ef4444;
   --text:#f5f5f5;
   --muted:#9ca3af;
 }
@@ -43,7 +42,11 @@ body::-webkit-scrollbar{display:none}
 .header span{font-size:12px;color:var(--muted)}
 
 /* CARDS */
-.cards{padding:0 16px;display:grid;gap:12px}
+.cards{
+  padding:0 16px;
+  display:grid;
+  gap:12px;
+}
 .card{
   background:var(--card);
   border:1px solid var(--border);
@@ -63,7 +66,11 @@ body::-webkit-scrollbar{display:none}
   border-radius:18px;
   padding:12px;
 }
-.chart-box h3{font-size:13px;color:var(--muted);margin-bottom:8px}
+.chart-box h3{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:8px;
+}
 
 /* LISTA */
 .lista{padding:0 16px 24px}
@@ -91,12 +98,12 @@ body::-webkit-scrollbar{display:none}
   </div>
 
   <div class="card">
-    <div class="label">Ticket Médio</div>
+    <div class="label">Ticket Médio Diário</div>
     <div class="value green" id="ticketMedio">R$ 0,00</div>
   </div>
 
   <div class="card">
-    <div class="label">Quantidade</div>
+    <div class="label">Dias com Movimento</div>
     <div class="value" id="quantidade">0</div>
   </div>
 </div>
@@ -109,27 +116,28 @@ body::-webkit-scrollbar{display:none}
 <div class="lista" id="listaCategorias"></div>
 
 <script>
-/* ===== SUPABASE ===== */
-const SUPABASE_URL = "https://dxkszikemntfusfyrzos.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+/* ================= SUPABASE ================= */
+const sb = supabase.createClient(
+  "https://dxkszikemntfusfyrzos.supabase.co",
+  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
+);
 
-/* ===== FILTROS GLOBAIS ===== */
+/* ================= FILTROS GLOBAIS ================= */
 const EMPRESA = localStorage.getItem("EMPRESA_ATIVA") || "todas";
 const DATA_INICIO = localStorage.getItem("DATA_INICIO");
 const DATA_FIM = localStorage.getItem("DATA_FIM");
 
-/* ===== UTIL ===== */
+/* ================= UTIL ================= */
 const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
 const fmtBR = iso => iso.split("-").reverse().join("/");
 
-/* ===== SUBTÍTULO ===== */
+/* ================= SUBTÍTULO ================= */
 document.getElementById("subtitulo").innerText =
   `${EMPRESA} • ${DATA_INICIO ? fmtBR(DATA_INICIO) : "—"} até ${DATA_FIM ? fmtBR(DATA_FIM) : "—"}`;
 
 let chart;
 
-/* ===== LOAD ===== */
+/* ================= LOAD ================= */
 async function carregarDados(){
   let query = sb
     .from("resumo_entradas")
@@ -157,7 +165,7 @@ async function carregarDados(){
   montarResumo(data || []);
 }
 
-/* ===== RESUMO ===== */
+/* ================= RESUMO ================= */
 function montarResumo(lista){
   let total = 0;
   const porDia = {};
@@ -165,6 +173,7 @@ function montarResumo(lista){
 
   lista.forEach(l=>{
     total += Number(l.valor);
+
     porDia[l.data_lancamento] =
       (porDia[l.data_lancamento] || 0) + Number(l.valor);
 
@@ -172,10 +181,12 @@ function montarResumo(lista){
       (porModalidade[l.modalidade] || 0) + Number(l.valor);
   });
 
+  const diasUnicos = Object.keys(porDia).length;
+
   totalVendas.innerText = `R$ ${BRL(total)}`;
-  quantidade.innerText = lista.length;
+  quantidade.innerText = diasUnicos;
   ticketMedio.innerText =
-    lista.length ? `R$ ${BRL(total / lista.length)}` : "R$ 0,00";
+    diasUnicos ? `R$ ${BRL(total / diasUnicos)}` : "R$ 0,00";
 
   /* ===== GRAFICO ===== */
   const labels = Object.keys(porDia).map(fmtBR);
@@ -202,7 +213,7 @@ function montarResumo(lista){
     }
   });
 
-  /* ===== LISTA ===== */
+  /* ===== LISTA POR MODALIDADE ===== */
   listaCategorias.innerHTML = "";
   Object.entries(porModalidade).forEach(([m,v])=>{
     const div = document.createElement("div");
