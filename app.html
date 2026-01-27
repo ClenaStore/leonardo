@@ -2,7 +2,6 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-
 <title>Grupo DV</title>
 
 <meta name="viewport"
@@ -126,55 +125,90 @@ iframe{
   <div class="avatar"></div>
 </div>
 
-<!-- IFRAME -->
+<!-- CONTEÚDO -->
 <div class="content">
-  <iframe id="frame" src="dashboard.html"></iframe>
+  <iframe id="frame"></iframe>
 </div>
 
 <!-- NAVBAR -->
 <nav class="navbar">
-  <div class="nav-item active" onclick="go(this,'dashboard.html')">
+  <div class="nav-item" data-page="dashboard.html">
     <i class="ri-dashboard-line"></i>
     Dashboard
   </div>
 
-  <div class="nav-item" onclick="go(this,'entradas.html')">
+  <div class="nav-item" data-page="entradas.html">
     <i class="ri-arrow-down-circle-line"></i>
     Entradas
   </div>
 
-  <div class="nav-item" onclick="go(this,'saidas.html')">
+  <div class="nav-item" data-page="saidas.html">
     <i class="ri-arrow-up-circle-line"></i>
     Saídas
   </div>
 
-  <div class="nav-item" onclick="go(this,'relatorios.html')">
+  <div class="nav-item" data-page="relatorios.html">
     <i class="ri-bar-chart-line"></i>
     Relatórios
   </div>
 
-  <div class="nav-item" onclick="go(this,'config.html')">
+  <div class="nav-item" data-page="config.html">
     <i class="ri-settings-3-line"></i>
     Config
   </div>
 </nav>
 
 <script>
+/* ================= CACHE CONFIG ================= */
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutos
+const PAGE_KEY = "APP_PAGE_CACHE";
+const TS_KEY = "APP_PAGE_CACHE_TS";
+
 const frame = document.getElementById("frame");
-let paginaAtual = "dashboard.html";
+const navItems = document.querySelectorAll(".nav-item");
 
-function go(el, page){
-  if(paginaAtual === page) return; // NÃO recarrega
+/* ================= FUNÇÕES ================= */
+function setActive(page){
+  navItems.forEach(i=>{
+    i.classList.toggle("active", i.dataset.page === page);
+  });
+}
 
-  paginaAtual = page;
+function carregarPagina(page, force=false){
+  const now = Date.now();
+  const ts = Number(localStorage.getItem(TS_KEY));
 
-  document.querySelectorAll(".nav-item")
-    .forEach(i => i.classList.remove("active"));
+  const cacheValido = ts && (now - ts < CACHE_TTL);
 
-  el.classList.add("active");
+  if(!force && cacheValido && localStorage.getItem(PAGE_KEY) === page){
+    // NÃO recarrega iframe
+    setActive(page);
+    return;
+  }
 
   frame.src = page;
+  localStorage.setItem(PAGE_KEY, page);
+  localStorage.setItem(TS_KEY, now);
+  setActive(page);
 }
+
+/* ================= NAV CLICK ================= */
+navItems.forEach(item=>{
+  item.onclick = ()=>{
+    carregarPagina(item.dataset.page);
+  };
+});
+
+/* ================= INIT ================= */
+(function init(){
+  const now = Date.now();
+  const ts = Number(localStorage.getItem(TS_KEY));
+  const page = localStorage.getItem(PAGE_KEY) || "dashboard.html";
+
+  const cacheExpirou = !ts || (now - ts > CACHE_TTL);
+
+  carregarPagina(page, cacheExpirou);
+})();
 </script>
 
 </body>
