@@ -195,12 +195,16 @@ function montarResumo(lista){
   type:"bar",
   data:{
     labels:Object.keys(porDia).map(fmtBR),
-    datasets:[{
-      data:Object.values(porDia),
-      backgroundColor:"#d4af37",
-      borderRadius:8,
-      barThickness:22
-    }]
+datasets:[{
+  data: Object.values(porDia),
+  backgroundColor: "#d4af37",
+  borderRadius: 8,
+
+  barThickness: 12,
+  categoryPercentage: 0.6,
+  barPercentage: 0.8
+}]
+
   },
   options:{
     plugins:{
