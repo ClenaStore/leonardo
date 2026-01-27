@@ -31,15 +31,48 @@ html,body{
   overflow:auto;scrollbar-width:none
 }
 body::-webkit-scrollbar{display:none}
+
 .header{padding:16px}
 .header h2{font-size:18px;font-weight:800}
 .header span{font-size:12px;color:var(--muted)}
-.filters{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
-select,input{
-  padding:12px;border-radius:12px;
-  background:#0b0b0b;border:1px solid var(--border);
-  color:var(--text)
+
+/* ===== FILTROS ===== */
+.filters{
+  padding:0 16px 16px;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
 }
+
+.filters select,
+.filters input{
+  flex:1;
+  min-width:140px;
+  padding:12px;
+  border-radius:12px;
+  background:#0b0b0b;
+  border:1px solid var(--border);
+  color:var(--text);
+}
+
+.btn-limpar{
+  padding:0 12px;
+  height:44px;
+  border-radius:12px;
+  border:1px dashed var(--border);
+  background:transparent;
+  color:var(--muted);
+  font-size:12px;
+  cursor:pointer;
+}
+
+.btn-limpar:hover{
+  color:#fff;
+  border-color:#444;
+}
+
+/* ===== GRÁFICO E CARDS ===== */
 .chart-box,.card{
   margin:0 16px 16px;
   background:var(--card);
@@ -47,6 +80,7 @@ select,input{
   border-radius:18px;
   padding:16px
 }
+
 .cards{display:grid;gap:12px}
 .value{font-size:22px;font-weight:800}
 .total{color:var(--gold)}
@@ -62,9 +96,11 @@ select,input{
   <span id="periodoLabel">—</span>
 </div>
 
+<!-- FILTROS EM LINHA -->
 <div class="filters">
   <select id="empresa"></select>
   <input id="periodo" placeholder="Período (dd/mm/aaaa)">
+  <button class="btn-limpar" onclick="limparFiltros()">Limpar</button>
 </div>
 
 <div class="chart-box">
@@ -96,20 +132,15 @@ const sb = supabase.createClient(
 );
 
 /* ================= CONFIG ================= */
-const MODALIDADES_NAO_FINANCEIRAS = [
-  "CONSUMO INTERNO",
-  "BONIFICAÇÃO"
-];
+const MODALIDADES_NAO_FINANCEIRAS = ["CONSUMO INTERNO","BONIFICAÇÃO"];
 
 /* ================= UTIL ================= */
-function limparNomeEmpresa(nome){
-  return nome.replace(/^\d+\s*-\s*/,"").trim();
-}
+const limparNomeEmpresa = n => n.replace(/^\d+\s*-\s*/,"").trim();
 
 /* ================= DATA PADRÃO = ONTEM ================= */
 function ontemISO(){
   const d = new Date();
-  d.setHours(12,0,0,0); // evita bug de fuso
+  d.setHours(12,0,0,0);
   d.setDate(d.getDate() - 1);
   return d.toISOString().slice(0,10);
 }
@@ -117,38 +148,36 @@ function ontemISO(){
 let dataInicio = localStorage.getItem("DATA_INICIO") || ontemISO();
 let dataFim = localStorage.getItem("DATA_FIM") || ontemISO();
 
-localStorage.setItem("DATA_INICIO", dataInicio);
-localStorage.setItem("DATA_FIM", dataFim);
+localStorage.setItem("DATA_INICIO",dataInicio);
+localStorage.setItem("DATA_FIM",dataFim);
 
 periodoLabel.innerText =
   new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
 async function carregarEmpresas(){
-  const { data } = await sb
-    .from("resumo_entradas")
-    .select("empresa");
+  const { data } = await sb.from("resumo_entradas").select("empresa");
 
-  const select = document.getElementById("empresa");
+  const select = empresa;
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
 
   [...new Set(data.map(d=>d.empresa))].forEach(e=>{
-    const opt = document.createElement("option");
-    opt.value = e;
-    opt.textContent = limparNomeEmpresa(e);
-    select.appendChild(opt);
+    const o = document.createElement("option");
+    o.value = e;
+    o.textContent = limparNomeEmpresa(e);
+    select.appendChild(o);
   });
 
   select.value = localStorage.getItem("EMPRESA_ATIVA") || "todas";
 
   select.onchange = ()=>{
-    localStorage.setItem("EMPRESA_ATIVA", select.value);
+    localStorage.setItem("EMPRESA_ATIVA",select.value);
     carregarDados();
   };
 }
 
 /* ================= CALENDÁRIO ================= */
-flatpickr("#periodo",{
+const picker = flatpickr("#periodo",{
   mode:"range",
   dateFormat:"d/m/Y",
   locale:flatpickr.l10ns.pt,
@@ -160,18 +189,36 @@ flatpickr("#periodo",{
     if(d.length===2){
       dataInicio = d[0].toISOString().slice(0,10);
       dataFim = d[1].toISOString().slice(0,10);
-
       localStorage.setItem("DATA_INICIO",dataInicio);
       localStorage.setItem("DATA_FIM",dataFim);
-
       periodoLabel.innerText =
         d[0].toLocaleDateString("pt-BR")+" a "+
         d[1].toLocaleDateString("pt-BR");
-
       carregarDados();
     }
   }
 });
+
+/* ================= LIMPAR ================= */
+function limparFiltros(){
+  localStorage.removeItem("EMPRESA_ATIVA");
+  localStorage.removeItem("DATA_INICIO");
+  localStorage.removeItem("DATA_FIM");
+
+  dataInicio = ontemISO();
+  dataFim = ontemISO();
+
+  picker.setDate([
+    new Date(dataInicio+"T12:00"),
+    new Date(dataFim+"T12:00")
+  ], true);
+
+  periodoLabel.innerText =
+    new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
+
+  empresa.value = "todas";
+  carregarDados();
+}
 
 /* ================= DADOS ================= */
 let chart;
@@ -182,8 +229,8 @@ async function carregarDados(){
   const emp = localStorage.getItem("EMPRESA_ATIVA");
   if(emp && emp!=="todas") q = q.eq("empresa",emp);
 
-  q = q.gte("data_lancamento", dataInicio)
-       .lte("data_lancamento", dataFim);
+  q = q.gte("data_lancamento",dataInicio)
+       .lte("data_lancamento",dataFim);
 
   const { data } = await q;
   montarDashboard(data||[]);
@@ -193,47 +240,39 @@ async function carregarDados(){
 function montarDashboard(lista){
   let total = 0;
   const porDia = {};
-  const informativas = {};
+  const info = {};
 
   lista.forEach(r=>{
     if(MODALIDADES_NAO_FINANCEIRAS.includes(r.modalidade)){
-      informativas[r.modalidade] =
-        (informativas[r.modalidade]||0)+Number(r.valor);
+      info[r.modalidade]=(info[r.modalidade]||0)+Number(r.valor);
       return;
     }
-
-    total += Number(r.valor);
-
-    porDia[r.data_lancamento] =
-      (porDia[r.data_lancamento]||0)+Number(r.valor);
+    total+=Number(r.valor);
+    porDia[r.data_lancamento]=(porDia[r.data_lancamento]||0)+Number(r.valor);
   });
-
-  const diasUnicos = Object.keys(porDia).length;
 
   totalEntradas.innerText =
     `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 
+  const dias = Object.keys(porDia).length;
   ticketMedio.innerText =
-    diasUnicos
-      ? `R$ ${(total/diasUnicos).toLocaleString("pt-BR",{minimumFractionDigits:2})}`
-      : "R$ 0,00";
+    dias ? `R$ ${(total/dias).toLocaleString("pt-BR",{dance:2})}` : "R$ 0,00";
 
-  informativas.innerHTML = Object.entries(informativas)
-    .map(([m,v])=>`${m}: R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`)
-    .join("<br>") || "—";
-
-  const labels = Object.keys(porDia).map(d=>d.split("-").reverse().join("/"));
-  const valores = Object.values(porDia);
+  informativas.innerHTML =
+    Object.entries(info).map(([m,v])=>`${m}: R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`).join("<br>") || "—";
 
   if(chart) chart.destroy();
   chart = new Chart(grafico,{
     type:"line",
-    data:{labels,datasets:[{
-      data:valores,
-      borderColor:"#22c55e",
-      backgroundColor:"rgba(34,197,94,.15)",
-      tension:.4
-    }]},
+    data:{
+      labels:Object.keys(porDia).map(d=>d.split("-").reverse().join("/")),
+      datasets:[{
+        data:Object.values(porDia),
+        borderColor:"#22c55e",
+        backgroundColor:"rgba(34,197,94,.15)",
+        tension:.4
+      }]
+    },
     options:{plugins:{legend:{display:false}}}
   });
 }
