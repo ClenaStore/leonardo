@@ -181,25 +181,42 @@ function montarResumo(lista){
   ticketMedio.innerText = dias ? `R$ ${BRL(total/dias)}` : "R$ 0,00";
 
   if(chart) chart.destroy();
-  chart = new Chart(grafico,{
-    type:"line",
-    data:{
-      labels:Object.keys(porDia).map(fmtBR),
-      datasets:[{
-        data:Object.values(porDia),
-        borderColor:"#d4af37",
-        backgroundColor:"rgba(212,175,55,.15)",
-        tension:.4
-      }]
+ chart = new Chart(grafico,{
+  type:"bar",
+  data:{
+    labels:Object.keys(porDia).map(fmtBR),
+    datasets:[{
+      data:Object.values(porDia),
+      backgroundColor:"#d4af37",
+      borderRadius:8,
+      barThickness:22
+    }]
+  },
+  options:{
+    plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label:(ctx)=>`R$ ${BRL(ctx.raw)}`
+        }
+      }
     },
-    options:{
-      plugins:{legend:{display:false}},
-      scales:{
-        x:{ticks:{color:"#9ca3af"}},
-        y:{ticks:{color:"#9ca3af"}}
+    scales:{
+      x:{
+        ticks:{color:"#9ca3af"},
+        grid:{display:false}
+      },
+      y:{
+        ticks:{
+          color:"#9ca3af",
+          callback:v=>`R$ ${BRL(v)}`
+        },
+        grid:{color:"#242424"}
       }
     }
-  });
+  }
+});
+
 
   listaCategorias.innerHTML = "";
   Object.entries(porCategoria).forEach(([c,v])=>{
