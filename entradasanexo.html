@@ -36,7 +36,7 @@ button{background:#d4af37;color:#000;font-weight:800;cursor:pointer}
 </div>
 
 <div class="card">
-  <h3>Pré-visualização (AGRUPADA)</h3>
+  <h3>Pré-visualização (AGRUPADA CORRETAMENTE)</h3>
   <div id="preview" class="preview">Nenhum arquivo processado.</div>
 </div>
 
@@ -76,6 +76,7 @@ const normalize = s =>
   (s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
 
 function agruparModalidade(txt){
+  if(!txt) return "OUTROS";
   const n = normalize(txt);
   for(const cat in categoriasAgrupadas){
     if(categoriasAgrupadas[cat].some(v=>n.includes(v))) return cat;
@@ -116,7 +117,6 @@ function processarArquivo(file, data, preview){
 
       const empresaDetectada = detectarEmpresaNormal(rows);
       let caixaAtual = null;
-
       const mapa = {};
 
       rows.forEach(l=>{
@@ -130,19 +130,19 @@ function processarArquivo(file, data, preview){
         }
 
         const valor = Number(String(valRaw).replace(".","").replace(",","."));
-        if(!desc || valor<=0 || !caixaAtual) return;
+        if(valor <= 0 || !caixaAtual) return;
 
         const empresaFinal = empresaDetectada
           ? empresaDetectada
-          : (caixaAtual<=5 ? "EMPORIO MERCATTO" : "RESTAURANTE MERCATTO");
+          : (caixaAtual <= 5 ? "EMPORIO MERCATTO" : "RESTAURANTE MERCATTO");
 
         const modalidade = agruparModalidade(desc);
         const key = `${data}|${empresaFinal}|${caixaAtual}|${modalidade}`;
 
-        mapa[key] = (mapa[key]||0) + valor;
+        mapa[key] = (mapa[key] || 0) + valor;
       });
 
-      const registrosArquivo = Object.entries(mapa).map(([k,v])=>{
+      const regs = Object.entries(mapa).map(([k,v])=>{
         const [data_lancamento,empresa,caixa,modalidade] = k.split("|");
         return {
           data_lancamento,
@@ -155,14 +155,12 @@ function processarArquivo(file, data, preview){
         };
       });
 
-      registrosAgrupados.push(...registrosArquivo);
+      registrosAgrupados.push(...regs);
 
       preview.innerHTML += `
         <div class="file-box">
           <strong>${file.name}</strong><br>
-          ${registrosArquivo.map(r=>
-            `• ${r.empresa} | Caixa ${r.caixa} | ${r.modalidade}: R$ ${r.valor.toFixed(2)}`
-          ).join("<br>")}
+          ${regs.map(r=>`• ${r.empresa} | Caixa ${r.caixa} | ${r.modalidade}: R$ ${r.valor.toFixed(2)}`).join("<br>")}
         </div>
       `;
 
