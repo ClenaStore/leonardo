@@ -216,9 +216,16 @@ const METAS = {
 };
 
 /* ================= UTIL ================= */
+/* ================= UTIL ================= */
 const limparNomeEmpresa = n =>
+  n
+    .replace(/^\d+\s*-\s*/,"")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g,"")
+    .toUpperCase()
+    .trim();
 
-  function obterMesReferencia(dataInicio, dataFim){
+function obterMesReferencia(dataInicio, dataFim){
   const ini = new Date(dataInicio);
   const fim = new Date(dataFim);
 
@@ -239,13 +246,6 @@ const limparNomeEmpresa = n =>
     mes: ini.getMonth() + 1
   };
 }
-
-  n
-   .replace(/^\d+\s*-\s*/,"")
-   .normalize("NFD")
-   .replace(/[\u0300-\u036f]/g,"")
-   .toUpperCase()
-   .trim();
 
 /* ================= DATA PADRÃO = ONTEM ================= */
 function ontemISO(){
