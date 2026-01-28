@@ -182,15 +182,25 @@ body::-webkit-scrollbar{display:none}
   <canvas id="grafico" height="180"></canvas>
 </div>
 <div class="cards" style="grid-template-columns:1fr 1fr">
-  <div class="card">
-    <div class="info">Meta Prata</div>
-    <canvas id="metaPrata" height="180"></canvas>
-  </div>
+<div class="card" id="cardMetaPrata">
+  <div class="info">Meta Prata</div>
 
-  <div class="card">
-    <div class="info">Meta Ouro</div>
-    <canvas id="metaOuro" height="180"></canvas>
-  </div>
+  <!-- ✅ VALOR DA META -->
+  <div class="value total" id="valorMetaPrata">R$ —</div>
+
+  <canvas id="metaPrata" height="180"></canvas>
+</div>
+
+
+<div class="card" id="cardMetaOuro">
+  <div class="info">Meta Ouro</div>
+
+  <!-- ✅ VALOR DA META -->
+  <div class="value total" id="valorMetaOuro">R$ —</div>
+
+  <canvas id="metaOuro" height="180"></canvas>
+</div>
+
 </div>
 
 <div class="cards">
@@ -599,6 +609,12 @@ function renderizarMetas(faturamento){
     metaPrata,
     faturamento
   );
+// ✅ MOSTRA O VALOR DA META NO CARD
+document.getElementById("valorMetaPrata").innerText =
+  `Meta: R$ ${metaPrata.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+
+document.getElementById("valorMetaOuro").innerText =
+  `Meta: R$ ${metaOuro.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 
 criarDonut(
   "metaOuro",
