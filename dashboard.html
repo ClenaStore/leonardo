@@ -86,6 +86,11 @@ body::-webkit-scrollbar{display:none}
 .total{color:var(--gold)}
 .entrada{color:var(--green)}
 .info{font-size:12px;color:var(--muted)}
+  /* ===== METAS ===== */
+.card canvas{
+  max-height:180px;
+}
+
 </style>
 </head>
 
@@ -105,6 +110,17 @@ body::-webkit-scrollbar{display:none}
 
 <div class="chart-box">
   <canvas id="grafico" height="180"></canvas>
+</div>
+<div class="cards" style="grid-template-columns:1fr 1fr">
+  <div class="card">
+    <div class="info">Meta Prata</div>
+    <canvas id="metaPrata" height="180"></canvas>
+  </div>
+
+  <div class="card">
+    <div class="info">Meta Ouro</div>
+    <canvas id="metaOuro" height="180"></canvas>
+  </div>
 </div>
 
 <div class="cards">
@@ -141,9 +157,24 @@ const MODALIDADES_NAO_FINANCEIRAS = [
   "CONVÊNIO",
   "CONVENIO"
 ];
+/* ================= METAS POR EMPRESA ================= */
+const METAS = {
+  "DELICIA GOURMET": { prata: 80000, ouro: 120000 },
+  "EMPORIO MERCATTO": { prata: 100000, ouro: 150000 },
+  "MEOS GOURMET LTDA": { prata: 60000, ouro: 90000 },
+  "PANIFICADORA DELICIA": { prata: 50000, ouro: 80000 },
+  "RESTAURANTE MERCATTO": { prata: 120000, ouro: 180000 },
+  "M. KIDS": { prata: 30000, ouro: 50000 }
+};
 
 /* ================= UTIL ================= */
-const limparNomeEmpresa = n => n.replace(/^\d+\s*-\s*/,"").trim();
+const limparNomeEmpresa = n =>
+  n
+   .replace(/^\d+\s*-\s*/,"")
+   .normalize("NFD")
+   .replace(/[\u0300-\u036f]/g,"")
+   .toUpperCase()
+   .trim();
 
 /* ================= DATA PADRÃO = ONTEM ================= */
 function ontemISO(){
@@ -230,6 +261,34 @@ function limparFiltros(){
 
 /* ================= DADOS ================= */
 let chart;
+/* ================= TEXTO CENTRAL DONUT ================= */
+const textoCentro = {
+  id: 'textoCentro',
+  afterDraw(chart){
+    const {ctx} = chart;
+    const v = chart.config.data.valor;
+    const p = chart.config.data.percentual;
+
+    ctx.save();
+    ctx.font = "700 16px Inter";
+    ctx.fillStyle = "#fff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(
+      `R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,
+      chart.width/2,
+      chart.height/2 - 8
+    );
+
+    ctx.font = "12px Inter";
+    ctx.fillStyle = "#9ca3af";
+    ctx.fillText(
+      `${p}% da meta`,
+      chart.width/2,
+      chart.height/2 + 12
+    );
+  }
+};
 
 async function carregarDados(){
   let todos = [];
@@ -261,6 +320,71 @@ let q = sb
 
   montarDashboard(todos);
 }
+/* ================= METAS ================= */
+function calcularMeta(total, meta){
+  const atingido = Math.min(total, meta);
+  const restante = Math.max(meta - total, 0);
+  return [atingido, restante];
+}
+
+function criarDonut(id, dados, cor, meta, total){
+  const ctx = document.getElementById(id);
+  if(!ctx) return;
+
+  if(ctx.chart) ctx.chart.destroy();
+
+  const percentual = Math.min(100, Math.round((total/meta)*100));
+
+  ctx.chart = new Chart(ctx,{
+    type:"doughnut",
+    plugins:[textoCentro],
+ data:{
+  valor: Math.min(total, meta),
+  percentual,
+
+      datasets:[{
+        data:dados,
+        backgroundColor:[cor, "#242424"],
+        borderWidth:0,
+        cutout:"78%"
+      }]
+    },
+    options:{
+      plugins:{legend:{display:false}},
+      animation:{duration:900}
+    }
+  });
+}
+
+function renderizarMetas(total){
+  const emp = empresa.value;
+  if(emp === "todas") return;
+
+  const nome = limparNomeEmpresa(emp);
+  const meta = METAS[nome];
+  if(!meta) return;
+
+  criarDonut(
+    "metaPrata",
+    calcularMeta(total, meta.prata),
+    "#9ca3af",
+    meta.prata,
+    total
+  );
+
+  if(total >= meta.prata){
+    criarDonut(
+      "metaOuro",
+      calcularMeta(total, meta.ouro),
+      "#d4af37",
+      meta.ouro,
+      total
+    );
+  } else {
+    document.getElementById("metaOuro").getContext("2d").clearRect(0,0,300,300);
+  }
+}
+
 
 /* ================= DASHBOARD ================= */
 function montarDashboard(lista){
