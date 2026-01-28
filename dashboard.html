@@ -458,13 +458,17 @@ let chart;
 const textoCentro = {
   id: 'textoCentro',
   afterDraw(chart){
-    const {ctx} = chart;
-    const textoCentro = {
-  id: 'textoCentro',
-  afterDraw(chart){
-    const {ctx} = chart;
+    const { ctx } = chart;
     const meta = chart.config.data.meta;
     const percentual = chart.config.data.percentual;
+
+    if (meta === undefined) return;
+
+    // ✅ VALOR ATINGIDO (PRIMEIRO SEGMENTO DO DONUT)
+    const atingido = Math.min(
+      chart.config.data.datasets[0].data[0],
+      meta
+    );
 
     ctx.save();
     ctx.font = "700 16px Inter";
@@ -472,9 +476,9 @@ const textoCentro = {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
 
-    // 🔥 MOSTRA O VALOR DA META
+    // ✅ MOSTRA O VALOR ATINGIDO (BATE COM A %)
     ctx.fillText(
-      `R$ ${meta.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,
+      `R$ ${atingido.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,
       chart.width / 2,
       chart.height / 2 - 8
     );
@@ -490,6 +494,8 @@ const textoCentro = {
     ctx.restore();
   }
 };
+
+
 
 
 async function carregarDados(){
@@ -536,7 +542,9 @@ function criarDonut(id, dados, cor, meta, total){
 
   if(ctx.chart) ctx.chart.destroy();
 
-  const percentual = Math.min(100, Math.round((total/meta)*100));
+const percentual = meta > 0
+  ? Math.min(100, Math.round((total / meta) * 100))
+  : 0;
 
   ctx.chart = new Chart(ctx,{
     type:"doughnut",
@@ -544,10 +552,9 @@ function criarDonut(id, dados, cor, meta, total){
 data:{
   meta: meta,
   percentual,
+  datasets:[{
+    data: dados,
 
-
-      datasets:[{
-        data:dados,
         backgroundColor:[cor, "#242424"],
         borderWidth:0,
         cutout:"78%"
@@ -601,16 +608,26 @@ criarDonut(
   faturamento
 );
 
-  } else {
-    const ctx = document.getElementById("metaOuro")?.getContext("2d");
-    if(ctx) ctx.clearRect(0, 0, 300, 300);
-  }
-
   const nomeMes = new Date(ano, mes - 1)
     .toLocaleString("pt-BR",{month:"long"});
 
   metaLabel.innerText =
     `Meta referente a ${nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1)} / ${ano}`;
+
+  const cardPrata = document.getElementById("metaPrata")?.closest(".card");
+const cardOuro  = document.getElementById("metaOuro")?.closest(".card");
+
+cardPrata?.classList.remove("glow-prata");
+cardOuro?.classList.remove("glow-ouro");
+
+if (faturamento >= metaPrata) {
+  cardPrata?.classList.add("glow-prata");
+}
+
+if (faturamento >= metaOuro) {
+  cardOuro?.classList.add("glow-ouro");
+}
+
 }
 
 
