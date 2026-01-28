@@ -236,47 +236,50 @@ function processarArquivo(file, data, preview){
         mapa[key] = (mapa[key] || 0) + valor;
       });
 
-      let total = 0;
-      const modalidadesHTML = [];
-      let empresaExibicao = "";
+      const resumoPorEmpresa = {};
 
-      Object.entries(mapa).forEach(([k,v])=>{
-        const [empresa,modalidade,caixa] = k.split("|");
+Object.entries(mapa).forEach(([k,v])=>{
+  const [empresa,modalidade,caixa] = k.split("|");
 
-        empresaExibicao = empresa;
-        total += v;
+  if(!resumoPorEmpresa[empresa]){
+    resumoPorEmpresa[empresa] = {
+      total: 0,
+      modalidades: []
+    };
+  }
 
-        modalidadesHTML.push(
-          `<div>• ${modalidade}: R$ ${v.toFixed(2)}</div>`
-        );
+  resumoPorEmpresa[empresa].total += v;
+  resumoPorEmpresa[empresa].modalidades.push(
+    `<div>• ${modalidade}: R$ ${v.toFixed(2)}</div>`
+  );
 
-        registros.push({
-          import_id: importIdAtual,
-          data_lancamento: data,
-          empresa,
-          caixa: Number(caixa)||null,
-          modalidade,
-          valor: v,
-          origem: "IMPORTACAO_EXCEL",
-          arquivo_origem: file.name
-        });
-      });
+  registros.push({
+    import_id: importIdAtual,
+    data_lancamento: data,
+    empresa,
+    caixa: Number(caixa)||null,
+    modalidade,
+    valor: v,
+    origem: "IMPORTACAO_EXCEL",
+    arquivo_origem: file.name
+  });
+});
 
-      preview.innerHTML += `
-        <div class="file-box">
-          <strong>${file.name}</strong><br>
-          <span style="font-size:12px;color:#94a3b8">
-            ${empresaExibicao}
-          </span><br>
-          <strong style="font-size:14px">
-            Total: R$ ${total.toFixed(2)}
-          </strong>
-
-          <div class="modalidades" style="margin-top:6px">
-            ${modalidadesHTML.join("")}
-          </div>
+preview.innerHTML += `
+  <div class="file-box">
+    <strong>${file.name}</strong>
+    ${Object.entries(resumoPorEmpresa).map(([empresa,dados])=>`
+      <div style="margin-top:10px;padding-top:8px;border-top:1px dashed #333">
+        <strong style="color:#d4af37">${empresa}</strong><br>
+        <strong>Total: R$ ${dados.total.toFixed(2)}</strong>
+        <div class="modalidades">
+          ${dados.modalidades.join("")}
         </div>
-      `;
+      </div>
+    `).join("")}
+  </div>
+`;
+
 
       resolve();
     };
