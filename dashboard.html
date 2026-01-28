@@ -492,45 +492,7 @@ let q = sb
 
   montarDashboard(todos);
 }
-/* ================= METAS ================= */
-async function calcularFaturamentoMeta(){
-  const emp = empresa.value;
 
-  const { ano, mes } = obterMesReferencia(dataInicio, dataFim);
-
-  let inicio = `${ano}-${String(mes).padStart(2,"0")}-01`;
-  let fim = new Date(ano, mes, 0).toISOString().slice(0,10);
-
-  let total = 0;
-  let from = 0;
-  const step = 1000;
-
-  while(true){
-    let q = sb
-      .from("resumo_entradas")
-      .select("valor, modalidade")
-      .gte("data_lancamento", inicio)
-      .lte("data_lancamento", fim)
-      .range(from, from + step - 1);
-
-    if(emp && emp !== "todas"){
-      q = q.eq("empresa", emp);
-    }
-
-    const { data } = await q;
-    if(!data || !data.length) break;
-
-    data.forEach(r=>{
-      const mod = (r.modalidade||"").toUpperCase();
-      if(MODALIDADES_NAO_FINANCEIRAS.some(n => mod.includes(n))) return;
-      total += Number(r.valor) || 0;
-    });
-
-    from += step;
-  }
-
-  return total;
-}
 function calcularMeta(total, meta){
   const atingido = Math.min(total, meta);
   const restante = Math.max(meta - total, 0);
@@ -567,18 +529,14 @@ function criarDonut(id, dados, cor, meta, total){
   });
 }
 
-async function renderizarMetas(){
+function renderizarMetas(faturamento){
   const emp = empresa.value;
-  const faturamento = await calcularFaturamentoMeta();
 
   const { ano, mes } = obterMesReferencia(dataInicio, dataFim);
   const chaveMes = `${ano}-${String(mes).padStart(2,"0")}`;
 
   const metasMes = METAS[chaveMes];
-  if(!metasMes){
-    console.warn("Metas não cadastradas para", chaveMes);
-    return;
-  }
+  if(!metasMes) return;
 
   let metaPrata = 0;
   let metaOuro = 0;
@@ -591,10 +549,7 @@ async function renderizarMetas(){
   } else {
     const nome = limparNomeEmpresa(emp);
     const meta = metasMes[nome];
-    if(!meta){
-      console.warn("Meta não encontrada para", nome, "em", chaveMes);
-      return;
-    }
+    if(!meta) return;
     metaPrata = meta.prata;
     metaOuro = meta.ouro;
   }
@@ -621,10 +576,10 @@ async function renderizarMetas(){
   }
 
   const nomeMes = new Date(ano, mes - 1)
-    .toLocaleString("pt-BR", { month: "long" });
+    .toLocaleString("pt-BR",{month:"long"});
 
-  document.getElementById("metaLabel").innerText =
-    `Meta referente a ${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} / ${ano}`;
+  metaLabel.innerText =
+    `Meta referente a ${nomeMes.charAt(0).toUpperCase()+nomeMes.slice(1)} / ${ano}`;
 }
 
 
@@ -650,14 +605,11 @@ function montarDashboard(lista){
   });
 
   totalEntradas.innerText =
-    `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2})}`;
+    `R$ ${total.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 
   const dias = Object.keys(porDia).length;
   ticketMedio.innerText =
-    dias ? `R$ ${(total/dias).toLocaleString("pt-BR",{
-      minimumFractionDigits:2,
-      maximumFractionDigits:2
-    })}` : "R$ 0,00";
+    dias ? `R$ ${(total/dias).toLocaleString("pt-BR",{minimumFractionDigits:2})}` : "R$ 0,00";
 
   informativas.innerHTML =
     Object.entries(info)
@@ -670,22 +622,19 @@ function montarDashboard(lista){
     data:{
       labels:Object.keys(porDia).map(d=>d.split("-").reverse().join("/")),
       datasets:[{
-        data: Object.values(porDia),
-        borderColor: "#22c55e",
-        backgroundColor: "rgba(34,197,94,.15)",
-        tension: .4,
-        pointRadius: 5,
-        pointHoverRadius: 7,
-        pointHitRadius: 20,
-        pointBackgroundColor: "#22c55e"
+        data:Object.values(porDia),
+        borderColor:"#22c55e",
+        backgroundColor:"rgba(34,197,94,.15)",
+        tension:.4
       }]
     },
     options:{plugins:{legend:{display:false}}}
   });
 
-  // 🔥 ESTA LINHA É O QUE FALTAVA
-renderizarMetas();
+  // ✅ PASSA O TOTAL CORRETO PARA A META
+  renderizarMetas(total);
 }
+
 
 
 
