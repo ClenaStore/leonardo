@@ -90,6 +90,40 @@ body::-webkit-scrollbar{display:none}
 .card canvas{
   max-height:180px;
 }
+/* ================= RESPONSIVO METAS ================= */
+
+/* Container das metas (desktop padrão já funciona) */
+.cards[style*="grid-template-columns:1fr 1fr"]{
+  grid-template-columns:1fr 1fr;
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 640px){
+
+  /* Metas em coluna */
+  .cards[style*="grid-template-columns:1fr 1fr"]{
+    grid-template-columns:1fr;
+  }
+
+  /* Ajuste de espaçamento */
+  .card{
+    padding:12px;
+  }
+
+  /* Donut menor no celular */
+  .card canvas{
+    max-height:150px;
+  }
+
+  /* Texto mais compacto */
+  .info{
+    font-size:11px;
+  }
+
+  .value{
+    font-size:18px;
+  }
+}
 
 </style>
 </head>
