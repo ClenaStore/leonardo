@@ -138,6 +138,27 @@ body::-webkit-scrollbar{display:none}
     text-align:center;
   }
 }
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 0px transparent;
+  }
+  50% {
+    box-shadow: 0 0 24px currentColor;
+  }
+  100% {
+    box-shadow: 0 0 0px transparent;
+  }
+}
+
+.card.glow-prata {
+  color: #9ca3af;
+  animation: pulseGlow 1.8s infinite;
+}
+
+.card.glow-ouro {
+  color: #d4af37;
+  animation: pulseGlow 1.5s infinite;
+}
 
 </style>
 </head>
@@ -438,29 +459,38 @@ const textoCentro = {
   id: 'textoCentro',
   afterDraw(chart){
     const {ctx} = chart;
-    const v = chart.config.data.valor;
-    const p = chart.config.data.percentual;
+    const textoCentro = {
+  id: 'textoCentro',
+  afterDraw(chart){
+    const {ctx} = chart;
+    const meta = chart.config.data.meta;
+    const percentual = chart.config.data.percentual;
 
     ctx.save();
     ctx.font = "700 16px Inter";
     ctx.fillStyle = "#fff";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+
+    // 🔥 MOSTRA O VALOR DA META
     ctx.fillText(
-      `R$ ${v.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,
-      chart.width/2,
-      chart.height/2 - 8
+      `R$ ${meta.toLocaleString("pt-BR",{minimumFractionDigits:2})}`,
+      chart.width / 2,
+      chart.height / 2 - 8
     );
 
     ctx.font = "12px Inter";
     ctx.fillStyle = "#9ca3af";
     ctx.fillText(
-      `${p}% da meta`,
-      chart.width/2,
-      chart.height/2 + 12
+      `${percentual}% da meta`,
+      chart.width / 2,
+      chart.height / 2 + 12
     );
+
+    ctx.restore();
   }
 };
+
 
 async function carregarDados(){
   let todos = [];
@@ -511,9 +541,10 @@ function criarDonut(id, dados, cor, meta, total){
   ctx.chart = new Chart(ctx,{
     type:"doughnut",
     plugins:[textoCentro],
- data:{
-  valor: Math.min(total, meta),
+data:{
+  meta: meta,
   percentual,
+
 
       datasets:[{
         data:dados,
@@ -562,14 +593,14 @@ function renderizarMetas(faturamento){
     faturamento
   );
 
-  if(faturamento >= metaPrata){
-    criarDonut(
-      "metaOuro",
-      calcularMeta(faturamento, metaOuro),
-      "#d4af37",
-      metaOuro,
-      faturamento
-    );
+criarDonut(
+  "metaOuro",
+  calcularMeta(faturamento, metaOuro),
+  "#d4af37",
+  metaOuro,
+  faturamento
+);
+
   } else {
     const ctx = document.getElementById("metaOuro")?.getContext("2d");
     if(ctx) ctx.clearRect(0, 0, 300, 300);
