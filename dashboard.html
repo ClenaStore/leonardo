@@ -146,7 +146,8 @@ body::-webkit-scrollbar{display:none}
 
 <div class="header">
   <h2>Dashboard Financeiro</h2>
-  <span id="periodoLabel">—</span>
+<span id="periodoLabel">—</span><br>
+<span id="metaLabel" style="font-size:11px;color:#9ca3af"></span>
 </div>
 
 <!-- FILTROS EM LINHA -->
@@ -495,15 +496,25 @@ async function renderizarMetas(){
     faturamento
   );
 
-  if(faturamento >= metaPrata){
-    criarDonut(
-      "metaOuro",
-      calcularMeta(faturamento, metaOuro),
-      "#d4af37",
-      metaOuro,
-      faturamento
-    );
-  }
+if(faturamento >= metaPrata){
+  criarDonut(
+    "metaOuro",
+    calcularMeta(faturamento, metaOuro),
+    "#d4af37",
+    metaOuro,
+    faturamento
+  );
+} else {
+  const ctx = document.getElementById("metaOuro")?.getContext("2d");
+  if(ctx) ctx.clearRect(0, 0, 300, 300);
+}
+const { ano, mes } = obterMesReferencia(dataInicio, dataFim);
+const nomeMes = new Date(ano, mes - 1)
+  .toLocaleString("pt-BR", { month: "long" });
+
+document.getElementById("metaLabel").innerText =
+  `Meta referente a ${nomeMes.charAt(0).toUpperCase() + nomeMes.slice(1)} / ${ano}`;
+
 }
 
 
