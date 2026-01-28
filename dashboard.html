@@ -426,22 +426,24 @@ function montarDashboard(lista){
     type:"line",
     data:{
       labels:Object.keys(porDia).map(d=>d.split("-").reverse().join("/")),
-datasets:[{
-  data: Object.values(porDia),
-  borderColor: "#22c55e",
-  backgroundColor: "rgba(34,197,94,.15)",
-  tension: .4,
-
-  pointRadius: 5,        // tamanho da bolinha
-  pointHoverRadius: 7,   // quando passa o mouse
-  pointHitRadius: 20,    // área de contato (ESSENCIAL)
-  pointBackgroundColor: "#22c55e"
-}]
-
+      datasets:[{
+        data: Object.values(porDia),
+        borderColor: "#22c55e",
+        backgroundColor: "rgba(34,197,94,.15)",
+        tension: .4,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        pointHitRadius: 20,
+        pointBackgroundColor: "#22c55e"
+      }]
     },
     options:{plugins:{legend:{display:false}}}
   });
+
+  // 🔥 ESTA LINHA É O QUE FALTAVA
+  renderizarMetas(total);
 }
+
 
 
 /* INIT */
