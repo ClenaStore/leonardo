@@ -159,6 +159,38 @@ body::-webkit-scrollbar{display:none}
   color: #d4af37;
   animation: pulseGlow 1.5s infinite;
 }
+/* ================= METAS – MOBILE COMPACTO REAL ================= */
+@media (max-width: 640px){
+
+  /* Cards de metas mais baixos */
+  #cardMetaPrata,
+  #cardMetaOuro{
+    padding:10px;
+    gap:6px;
+  }
+
+  /* Título "Meta Prata / Ouro" menor */
+  #cardMetaPrata .info,
+  #cardMetaOuro .info{
+    font-size:11px;
+    text-align:center;
+  }
+
+  /* 🔥 VALOR DA META (PRINCIPAL PROBLEMA) */
+  #valorMetaPrata,
+  #valorMetaOuro{
+    font-size:14px;          /* ↓ antes era 22px */
+    font-weight:700;
+    text-align:center;
+    margin-bottom:4px;
+  }
+
+  /* Donut realmente menor */
+  #cardMetaPrata canvas,
+  #cardMetaOuro canvas{
+    max-height:100px;        /* ↓ antes 120/180 */
+  }
+}
 
 </style>
 </head>
