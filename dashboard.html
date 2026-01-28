@@ -217,6 +217,29 @@ const METAS = {
 
 /* ================= UTIL ================= */
 const limparNomeEmpresa = n =>
+
+  function obterMesReferencia(dataInicio, dataFim){
+  const ini = new Date(dataInicio);
+  const fim = new Date(dataFim);
+
+  // Se cruzou meses, usa o mês mais recente
+  if(
+    ini.getMonth() !== fim.getMonth() ||
+    ini.getFullYear() !== fim.getFullYear()
+  ){
+    return {
+      ano: fim.getFullYear(),
+      mes: fim.getMonth() + 1
+    };
+  }
+
+  // Mesmo mês
+  return {
+    ano: ini.getFullYear(),
+    mes: ini.getMonth() + 1
+  };
+}
+
   n
    .replace(/^\d+\s*-\s*/,"")
    .normalize("NFD")
@@ -369,11 +392,50 @@ let q = sb
   montarDashboard(todos);
 }
 /* ================= METAS ================= */
+async function calcularFaturamentoMeta(){
+  const emp = empresa.value;
+
+  const { ano, mes } = obterMesReferencia(dataInicio, dataFim);
+
+  let inicio = `${ano}-${String(mes).padStart(2,"0")}-01`;
+  let fim = new Date(ano, mes, 0).toISOString().slice(0,10);
+
+  let total = 0;
+  let from = 0;
+  const step = 1000;
+
+  while(true){
+    let q = sb
+      .from("resumo_entradas")
+      .select("valor, modalidade")
+      .gte("data_lancamento", inicio)
+      .lte("data_lancamento", fim)
+      .range(from, from + step - 1);
+
+    if(emp && emp !== "todas"){
+      q = q.eq("empresa", emp);
+    }
+
+    const { data } = await q;
+    if(!data || !data.length) break;
+
+    data.forEach(r=>{
+      const mod = (r.modalidade||"").toUpperCase();
+      if(MODALIDADES_NAO_FINANCEIRAS.some(n => mod.includes(n))) return;
+      total += Number(r.valor) || 0;
+    });
+
+    from += step;
+  }
+
+  return total;
+}
 function calcularMeta(total, meta){
   const atingido = Math.min(total, meta);
   const restante = Math.max(meta - total, 0);
   return [atingido, restante];
 }
+
 
 function criarDonut(id, dados, cor, meta, total){
   const ctx = document.getElementById(id);
@@ -404,34 +466,46 @@ function criarDonut(id, dados, cor, meta, total){
   });
 }
 
-function renderizarMetas(total){
+async function renderizarMetas(){
   const emp = empresa.value;
-  if(emp === "todas") return;
 
-  const nome = limparNomeEmpresa(emp);
-  const meta = METAS[nome];
-  if(!meta) return;
+  let faturamento = await calcularFaturamentoMeta();
+
+  let metaPrata = 0;
+  let metaOuro = 0;
+
+  if(emp === "todas"){
+    Object.values(METAS).forEach(m=>{
+      metaPrata += m.prata;
+      metaOuro += m.ouro;
+    });
+  } else {
+    const nome = limparNomeEmpresa(emp);
+    const meta = METAS[nome];
+    if(!meta) return;
+    metaPrata = meta.prata;
+    metaOuro = meta.ouro;
+  }
 
   criarDonut(
     "metaPrata",
-    calcularMeta(total, meta.prata),
+    calcularMeta(faturamento, metaPrata),
     "#9ca3af",
-    meta.prata,
-    total
+    metaPrata,
+    faturamento
   );
 
-  if(total >= meta.prata){
+  if(faturamento >= metaPrata){
     criarDonut(
       "metaOuro",
-      calcularMeta(total, meta.ouro),
+      calcularMeta(faturamento, metaOuro),
       "#d4af37",
-      meta.ouro,
-      total
+      metaOuro,
+      faturamento
     );
-  } else {
-    document.getElementById("metaOuro").getContext("2d").clearRect(0,0,300,300);
   }
 }
+
 
 
 /* ================= DASHBOARD ================= */
@@ -489,7 +563,7 @@ function montarDashboard(lista){
   });
 
   // 🔥 ESTA LINHA É O QUE FALTAVA
-  renderizarMetas(total);
+renderizarMetas();
 }
 
 
