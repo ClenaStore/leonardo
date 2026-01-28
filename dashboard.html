@@ -90,38 +90,52 @@ body::-webkit-scrollbar{display:none}
 .card canvas{
   max-height:180px;
 }
-/* ================= RESPONSIVO METAS ================= */
+/* ================= METAS – AJUSTE MOBILE PERFEITO ================= */
 
-/* Container das metas (desktop padrão já funciona) */
+/* Container das metas */
 .cards[style*="grid-template-columns:1fr 1fr"]{
+  display:grid;
   grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:0 16px 16px;
+}
+
+/* Remove margem lateral dos cards só nas metas */
+.cards[style*="grid-template-columns:1fr 1fr"] .card{
+  margin:0;
+  padding:12px;
+}
+
+/* Canvas nunca estoura */
+.cards[style*="grid-template-columns:1fr 1fr"] canvas{
+  max-width:100%;
+  height:auto;
 }
 
 /* ===== MOBILE ===== */
 @media (max-width: 640px){
 
-  /* Metas em coluna */
+  /* Continua 2 colunas */
   .cards[style*="grid-template-columns:1fr 1fr"]{
-    grid-template-columns:1fr;
+    grid-template-columns:1fr 1fr;
+    margin:0 12px 16px;
   }
 
-  /* Ajuste de espaçamento */
-  .card{
-    padding:12px;
+  /* Card ainda mais compacto */
+  .cards[style*="grid-template-columns:1fr 1fr"] .card{
+    padding:10px;
+    border-radius:16px;
   }
 
-  /* Donut menor no celular */
-  .card canvas{
-    max-height:150px;
+  /* Donut menor para caber */
+  .cards[style*="grid-template-columns:1fr 1fr"] canvas{
+    max-height:120px;
   }
 
-  /* Texto mais compacto */
-  .info{
+  /* Texto menor */
+  .cards[style*="grid-template-columns:1fr 1fr"] .info{
     font-size:11px;
-  }
-
-  .value{
-    font-size:18px;
+    text-align:center;
   }
 }
 
