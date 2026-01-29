@@ -338,7 +338,8 @@ periodoLabel.innerText =
   new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
-/* ================= EMPRESAS (CORRETO POR PERÍODO) ================= */
+const empresaSelect = document.getElementById("empresa");
+
 async function carregarEmpresas(){
   const { data, error } = await sb
     .from("resumo_entradas")
@@ -351,7 +352,7 @@ async function carregarEmpresas(){
     return;
   }
 
-  const select = empresa;
+  const select = empresaSelect;
   const atual = localStorage.getItem("EMPRESA_ATIVA");
 
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
@@ -359,6 +360,12 @@ async function carregarEmpresas(){
   const unicas = [...new Set(
     (data || []).map(d => d.empresa).filter(Boolean)
   )];
+
+  if(unicas.length === 0){
+    select.innerHTML = `<option value="todas">Sem dados no período</option>`;
+    localStorage.removeItem("EMPRESA_ATIVA");
+    return;
+  }
 
   unicas
     .sort((a,b)=>limparNomeEmpresa(a).localeCompare(limparNomeEmpresa(b)))
@@ -369,7 +376,6 @@ async function carregarEmpresas(){
       select.appendChild(o);
     });
 
-  // mantém seleção se ainda existir
   if(atual && (atual === "todas" || unicas.includes(atual))){
     select.value = atual;
   } else {
@@ -383,8 +389,6 @@ async function carregarEmpresas(){
   };
 }
 
-
-/* ================= CALENDÁRIO ================= */
 /* ================= CALENDÁRIO ================= */
 const picker = flatpickr("#periodo",{
   mode:"range",
