@@ -2,7 +2,7 @@ const CACHE_NAME = 'grupo-dv-v1';
 
 const FILES_TO_CACHE = [
   './',
-  './index.html',
+  './app.html',
   './dashboard.html',
   './entradas.html',
   './saidas.html',
