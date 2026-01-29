@@ -191,6 +191,34 @@ body::-webkit-scrollbar{display:none}
     max-height:100px;        /* ↓ antes 120/180 */
   }
 }
+/* ===== FLATPICKR FIX DEFINITIVO (PWA + IFRAME) ===== */
+.flatpickr-calendar{
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-width: calc(100vw - 24px) !important;
+  width: 100% !important;
+  z-index: 9999 !important;
+  box-sizing: border-box;
+}
+
+/* range não estoura */
+.flatpickr-calendar.rangeMode{
+  max-width: 360px !important;
+}
+
+/* força tudo caber */
+.flatpickr-days,
+.flatpickr-weekdays,
+.flatpickr-innerContainer{
+  width: 100% !important;
+}
+
+/* remove QUALQUER scroll lateral */
+html, body{
+  overflow-x: hidden !important;
+}
 
 </style>
 </head>
@@ -384,12 +412,12 @@ async function carregarEmpresas(){
 }
 
 
-/* ================= CALENDÁRIO ================= */
-/* ================= CALENDÁRIO ================= */
 const picker = flatpickr("#periodo",{
   mode:"range",
   dateFormat:"d/m/Y",
   locale:flatpickr.l10ns.pt,
+  position: "center",
+  appendTo: document.body,
   defaultDate:[
     new Date(dataInicio+"T12:00"),
     new Date(dataFim+"T12:00")
@@ -406,11 +434,13 @@ const picker = flatpickr("#periodo",{
         d[0].toLocaleDateString("pt-BR")+" a "+
         d[1].toLocaleDateString("pt-BR");
 
-      await carregarEmpresas();   // ✅ agora funciona
+      await carregarEmpresas();
       carregarDados();
     }
   }
 });
+
+
 
 /* ================= LIMPAR ================= */
 /* ================= LIMPAR ================= */
