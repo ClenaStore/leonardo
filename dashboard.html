@@ -358,7 +358,8 @@ async function carregarEmpresas(){
 
   (data || []).forEach(e=>{
     const o = document.createElement("option");
-    o.value = e.nome;
+o.value = limparNomeEmpresa(e.nome);
+o.textContent = limparNomeEmpresa(e.nome);
     o.textContent = limparNomeEmpresa(e.nome);
     select.appendChild(o);
   });
@@ -478,18 +479,12 @@ async function carregarDados(){
   const step = 1000;
 
   while(true){
-let q = sb
-  .from("resumo_entradas")
-  .select("*")
-  .order("data_lancamento", { ascending: true })
-  .order("id", { ascending: true })
-  .range(from, from + step - 1);
-
-
-    const emp = localStorage.getItem("EMPRESA_ATIVA");
-    if(emp && emp !== "todas") q = q.eq("empresa", emp);
-
-    q = q
+    let q = sb
+      .from("resumo_entradas")
+      .select("*")
+      .order("data_lancamento", { ascending: true })
+      .order("id", { ascending: true })
+      .range(from, from + step - 1)
       .gte("data_lancamento", dataInicio)
       .lte("data_lancamento", dataFim);
 
@@ -500,8 +495,19 @@ let q = sb
     from += step;
   }
 
+  const emp = localStorage.getItem("EMPRESA_ATIVA");
+
+  // ✅ FILTRO CORRETO (NORMALIZADO)
+  if(emp && emp !== "todas"){
+    const alvo = limparNomeEmpresa(emp);
+    todos = todos.filter(r =>
+      limparNomeEmpresa(r.empresa) === alvo
+    );
+  }
+
   montarDashboard(todos);
 }
+
 
 function calcularMeta(total, meta){
   const atingido = Math.min(total, meta);
