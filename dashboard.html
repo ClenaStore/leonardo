@@ -338,27 +338,53 @@ periodoLabel.innerText =
   new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
+/* ================= EMPRESAS (CORRETO POR PERÍODO) ================= */
 async function carregarEmpresas(){
-  const { data } = await sb.from("resumo_entradas").select("empresa");
+  const { data, error } = await sb
+    .from("resumo_entradas")
+    .select("empresa")
+    .gte("data_lancamento", dataInicio)
+    .lte("data_lancamento", dataFim);
+
+  if(error){
+    console.error("Erro ao carregar empresas:", error);
+    return;
+  }
 
   const select = empresa;
+  const atual = localStorage.getItem("EMPRESA_ATIVA");
+
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
 
-  [...new Set(data.map(d=>d.empresa))].forEach(e=>{
-    const o = document.createElement("option");
-    o.value = e;
-    o.textContent = limparNomeEmpresa(e);
-    select.appendChild(o);
-  });
+  const unicas = [...new Set(
+    (data || []).map(d => d.empresa).filter(Boolean)
+  )];
 
-  select.value = localStorage.getItem("EMPRESA_ATIVA") || "todas";
+  unicas
+    .sort((a,b)=>limparNomeEmpresa(a).localeCompare(limparNomeEmpresa(b)))
+    .forEach(e=>{
+      const o = document.createElement("option");
+      o.value = e;
+      o.textContent = limparNomeEmpresa(e);
+      select.appendChild(o);
+    });
+
+  // mantém seleção se ainda existir
+  if(atual && (atual === "todas" || unicas.includes(atual))){
+    select.value = atual;
+  } else {
+    select.value = "todas";
+    localStorage.removeItem("EMPRESA_ATIVA");
+  }
 
   select.onchange = ()=>{
-    localStorage.setItem("EMPRESA_ATIVA",select.value);
+    localStorage.setItem("EMPRESA_ATIVA", select.value);
     carregarDados();
   };
 }
 
+
+/* ================= CALENDÁRIO ================= */
 /* ================= CALENDÁRIO ================= */
 const picker = flatpickr("#periodo",{
   mode:"range",
@@ -368,22 +394,27 @@ const picker = flatpickr("#periodo",{
     new Date(dataInicio+"T12:00"),
     new Date(dataFim+"T12:00")
   ],
-  onClose:(d)=>{
+  onClose: async (d)=>{
     if(d.length===2){
       dataInicio = d[0].toISOString().slice(0,10);
       dataFim = d[1].toISOString().slice(0,10);
+
       localStorage.setItem("DATA_INICIO",dataInicio);
       localStorage.setItem("DATA_FIM",dataFim);
+
       periodoLabel.innerText =
         d[0].toLocaleDateString("pt-BR")+" a "+
         d[1].toLocaleDateString("pt-BR");
+
+      await carregarEmpresas();   // ✅ agora funciona
       carregarDados();
     }
   }
 });
 
 /* ================= LIMPAR ================= */
-function limparFiltros(){
+/* ================= LIMPAR ================= */
+async function limparFiltros(){
   localStorage.removeItem("EMPRESA_ATIVA");
   localStorage.removeItem("DATA_INICIO");
   localStorage.removeItem("DATA_FIM");
@@ -400,8 +431,11 @@ function limparFiltros(){
     new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
   empresa.value = "todas";
+
+  await carregarEmpresas();   // ✅ agora funciona
   carregarDados();
 }
+
 
 /* ================= DADOS ================= */
 let chart;
@@ -638,7 +672,11 @@ await renderizarMetas(total);
 
 
 /* INIT */
-carregarEmpresas().then(carregarDados);
+/* INIT */
+(async ()=>{
+  await carregarEmpresas();
+  carregarDados();
+})();
 </script>
 
 </body>
