@@ -342,10 +342,9 @@ const empresaSelect = document.getElementById("empresa");
 
 async function carregarEmpresas(){
   const { data, error } = await sb
-    .from("resumo_entradas")
-    .select("empresa")
-    .gte("data_lancamento", dataInicio)
-    .lte("data_lancamento", dataFim);
+    .from("empresas")
+    .select("nome")
+    .order("nome");
 
   if(error){
     console.error("Erro ao carregar empresas:", error);
@@ -357,30 +356,15 @@ async function carregarEmpresas(){
 
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
 
-  const unicas = [...new Set(
-    (data || []).map(d => d.empresa).filter(Boolean)
-  )];
+  (data || []).forEach(e=>{
+    const o = document.createElement("option");
+    o.value = e.nome;
+    o.textContent = limparNomeEmpresa(e.nome);
+    select.appendChild(o);
+  });
 
-  if(unicas.length === 0){
-    select.innerHTML = `<option value="todas">Sem dados no período</option>`;
-    localStorage.removeItem("EMPRESA_ATIVA");
-    return;
-  }
-
-  unicas
-    .sort((a,b)=>limparNomeEmpresa(a).localeCompare(limparNomeEmpresa(b)))
-    .forEach(e=>{
-      const o = document.createElement("option");
-      o.value = e;
-      o.textContent = limparNomeEmpresa(e);
-      select.appendChild(o);
-    });
-
-  if(atual && (atual === "todas" || unicas.includes(atual))){
+  if(atual){
     select.value = atual;
-  } else {
-    select.value = "todas";
-    localStorage.removeItem("EMPRESA_ATIVA");
   }
 
   select.onchange = ()=>{
@@ -388,6 +372,7 @@ async function carregarEmpresas(){
     carregarDados();
   };
 }
+
 
 /* ================= CALENDÁRIO ================= */
 const picker = flatpickr("#periodo",{
