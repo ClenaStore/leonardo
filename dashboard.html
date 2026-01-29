@@ -625,10 +625,10 @@ async function renderizarMetas(faturamento){
   );
 
   document.getElementById("valorMetaPrata").innerText =
-    `Meta: R$ ${metaPrata.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    `R$ ${metaPrata.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 
   document.getElementById("valorMetaOuro").innerText =
-    `Meta: R$ ${metaOuro.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
+    `R$ ${metaOuro.toLocaleString("pt-BR",{minimumFractionDigits:2})}`;
 
   const nomeMes = new Date(ano, mes - 1)
     .toLocaleString("pt-BR",{month:"long"});
