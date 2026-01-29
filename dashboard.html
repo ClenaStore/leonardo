@@ -338,21 +338,20 @@ periodoLabel.innerText =
   new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
 /* ================= EMPRESAS ================= */
-const empresaSelect = document.getElementById("empresa");
-
+/* ================= EMPRESAS (CORRETO POR PERÍODO) ================= */
 async function carregarEmpresas(){
   const { data, error } = await sb
     .from("resumo_entradas")
     .select("empresa")
-    .order("empresa");
+    .gte("data_lancamento", dataInicio)
+    .lte("data_lancamento", dataFim);
 
   if(error){
-    console.error("Erro ao carregar empresas:", error.message);
-    alert(error.message);
+    console.error("Erro ao carregar empresas:", error);
     return;
   }
 
-  const select = empresaSelect;
+  const select = empresa;
   const atual = localStorage.getItem("EMPRESA_ATIVA");
 
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
@@ -361,15 +360,21 @@ async function carregarEmpresas(){
     (data || []).map(d => d.empresa).filter(Boolean)
   )];
 
-  unicas.forEach(nome=>{
-    const o = document.createElement("option");
-    o.value = limparNomeEmpresa(nome);
-    o.textContent = limparNomeEmpresa(nome);
-    select.appendChild(o);
-  });
+  unicas
+    .sort((a,b)=>limparNomeEmpresa(a).localeCompare(limparNomeEmpresa(b)))
+    .forEach(e=>{
+      const o = document.createElement("option");
+      o.value = e;
+      o.textContent = limparNomeEmpresa(e);
+      select.appendChild(o);
+    });
 
-  if(atual){
+  // mantém seleção se ainda existir
+  if(atual && (atual === "todas" || unicas.includes(atual))){
     select.value = atual;
+  } else {
+    select.value = "todas";
+    localStorage.removeItem("EMPRESA_ATIVA");
   }
 
   select.onchange = ()=>{
@@ -378,6 +383,36 @@ async function carregarEmpresas(){
   };
 }
 
+
+/* ================= CALENDÁRIO ================= */
+/* ================= CALENDÁRIO ================= */
+const picker = flatpickr("#periodo",{
+  mode:"range",
+  dateFormat:"d/m/Y",
+  locale:flatpickr.l10ns.pt,
+  defaultDate:[
+    new Date(dataInicio+"T12:00"),
+    new Date(dataFim+"T12:00")
+  ],
+  onClose: async (d)=>{
+    if(d.length===2){
+      dataInicio = d[0].toISOString().slice(0,10);
+      dataFim = d[1].toISOString().slice(0,10);
+
+      localStorage.setItem("DATA_INICIO",dataInicio);
+      localStorage.setItem("DATA_FIM",dataFim);
+
+      periodoLabel.innerText =
+        d[0].toLocaleDateString("pt-BR")+" a "+
+        d[1].toLocaleDateString("pt-BR");
+
+      await carregarEmpresas();   // ✅ agora funciona
+      carregarDados();
+    }
+  }
+});
+
+/* ================= LIMPAR ================= */
 /* ================= LIMPAR ================= */
 async function limparFiltros(){
   localStorage.removeItem("EMPRESA_ATIVA");
@@ -395,12 +430,11 @@ async function limparFiltros(){
   periodoLabel.innerText =
     new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
-  empresaSelect.value = "todas"; // ✅ CORRETO
+  empresa.value = "todas";
 
-  await carregarEmpresas();
+  await carregarEmpresas();   // ✅ agora funciona
   carregarDados();
 }
-
 
 
 /* ================= DADOS ================= */
@@ -455,12 +489,18 @@ async function carregarDados(){
   const step = 1000;
 
   while(true){
-    let q = sb
-      .from("resumo_entradas")
-      .select("*")
-      .order("data_lancamento", { ascending: true })
-      .order("id", { ascending: true })
-      .range(from, from + step - 1)
+let q = sb
+  .from("resumo_entradas")
+  .select("*")
+  .order("data_lancamento", { ascending: true })
+  .order("id", { ascending: true })
+  .range(from, from + step - 1);
+
+
+    const emp = localStorage.getItem("EMPRESA_ATIVA");
+    if(emp && emp !== "todas") q = q.eq("empresa", emp);
+
+    q = q
       .gte("data_lancamento", dataInicio)
       .lte("data_lancamento", dataFim);
 
@@ -471,19 +511,8 @@ async function carregarDados(){
     from += step;
   }
 
-  const emp = localStorage.getItem("EMPRESA_ATIVA");
-
-  // ✅ FILTRO CORRETO (NORMALIZADO)
-  if(emp && emp !== "todas"){
-    const alvo = limparNomeEmpresa(emp);
-    todos = todos.filter(r =>
-      limparNomeEmpresa(r.empresa) === alvo
-    );
-  }
-
   montarDashboard(todos);
 }
-
 
 function calcularMeta(total, meta){
   const atingido = Math.min(total, meta);
