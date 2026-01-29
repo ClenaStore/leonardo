@@ -356,13 +356,13 @@ async function carregarEmpresas(){
 
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
 
-  (data || []).forEach(e=>{
-    const o = document.createElement("option");
-o.value = limparNomeEmpresa(e.nome);
-o.textContent = limparNomeEmpresa(e.nome);
-    o.textContent = limparNomeEmpresa(e.nome);
-    select.appendChild(o);
-  });
+(data || []).forEach(e=>{
+  const o = document.createElement("option");
+  o.value = limparNomeEmpresa(e.nome);
+  o.textContent = limparNomeEmpresa(e.nome);
+  select.appendChild(o);
+});
+
 
   if(atual){
     select.value = atual;
@@ -403,7 +403,6 @@ const picker = flatpickr("#periodo",{
 });
 
 /* ================= LIMPAR ================= */
-/* ================= LIMPAR ================= */
 async function limparFiltros(){
   localStorage.removeItem("EMPRESA_ATIVA");
   localStorage.removeItem("DATA_INICIO");
@@ -420,11 +419,12 @@ async function limparFiltros(){
   periodoLabel.innerText =
     new Date(dataInicio+"T12:00").toLocaleDateString("pt-BR");
 
-  empresa.value = "todas";
+  empresaSelect.value = "todas"; // ✅ CORRETO
 
-  await carregarEmpresas();   // ✅ agora funciona
+  await carregarEmpresas();
   carregarDados();
 }
+
 
 
 /* ================= DADOS ================= */
