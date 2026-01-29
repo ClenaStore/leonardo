@@ -342,12 +342,13 @@ const empresaSelect = document.getElementById("empresa");
 
 async function carregarEmpresas(){
   const { data, error } = await sb
-    .from("empresas")
-    .select("nome")
-    .order("nome");
+    .from("resumo_entradas")
+    .select("empresa")
+    .order("empresa");
 
   if(error){
-    console.error("Erro ao carregar empresas:", error);
+    console.error("Erro ao carregar empresas:", error.message);
+    alert(error.message);
     return;
   }
 
@@ -356,13 +357,16 @@ async function carregarEmpresas(){
 
   select.innerHTML = `<option value="todas">Todas as empresas</option>`;
 
-(data || []).forEach(e=>{
-  const o = document.createElement("option");
-  o.value = limparNomeEmpresa(e.nome);
-  o.textContent = limparNomeEmpresa(e.nome);
-  select.appendChild(o);
-});
+  const unicas = [...new Set(
+    (data || []).map(d => d.empresa).filter(Boolean)
+  )];
 
+  unicas.forEach(nome=>{
+    const o = document.createElement("option");
+    o.value = limparNomeEmpresa(nome);
+    o.textContent = limparNomeEmpresa(nome);
+    select.appendChild(o);
+  });
 
   if(atual){
     select.value = atual;
@@ -373,34 +377,6 @@ async function carregarEmpresas(){
     carregarDados();
   };
 }
-
-
-/* ================= CALENDÁRIO ================= */
-const picker = flatpickr("#periodo",{
-  mode:"range",
-  dateFormat:"d/m/Y",
-  locale:flatpickr.l10ns.pt,
-  defaultDate:[
-    new Date(dataInicio+"T12:00"),
-    new Date(dataFim+"T12:00")
-  ],
-  onClose: async (d)=>{
-    if(d.length===2){
-      dataInicio = d[0].toISOString().slice(0,10);
-      dataFim = d[1].toISOString().slice(0,10);
-
-      localStorage.setItem("DATA_INICIO",dataInicio);
-      localStorage.setItem("DATA_FIM",dataFim);
-
-      periodoLabel.innerText =
-        d[0].toLocaleDateString("pt-BR")+" a "+
-        d[1].toLocaleDateString("pt-BR");
-
-      await carregarEmpresas();   // ✅ agora funciona
-      carregarDados();
-    }
-  }
-});
 
 /* ================= LIMPAR ================= */
 async function limparFiltros(){
