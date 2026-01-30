@@ -9,18 +9,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
-<!-- 🔒 BLOQUEIO: DASHBOARD NÃO PODE SER HOME DO PWA -->
-<script>
-if (
-  window.matchMedia('(display-mode: standalone)').matches ||
-  window.navigator.standalone === true
-){
-  // se abriu como PWA direto no dashboard, volta pro app.html
-  if (!location.pathname.endsWith('app.html')) {
-    location.replace('app.html');
-  }
-}
-</script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
