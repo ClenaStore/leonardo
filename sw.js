@@ -1,4 +1,4 @@
-const CACHE_NAME = 'grupo-dv-v1';
+const CACHE_NAME = 'grupo-dv-v2';
 
 const FILES_TO_CACHE = [
   './app.html',
