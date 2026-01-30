@@ -24,19 +24,19 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "url": "index.html#dashboard",
+      "url": "app.html#dashboard",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Entradas",
       "short_name": "Entradas",
-      "url": "index.html#entradas",
+      "url": "app.html#entradas",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Saídas",
       "short_name": "Saídas",
-      "url": "index.html#saidas",
+      "url": "app.html#saidas",
       "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
     }
   ]
