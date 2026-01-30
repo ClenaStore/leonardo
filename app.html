@@ -174,12 +174,12 @@ body.pwa .content{
 
   <!-- CONTEÚDO -->
   <div class="content">
-    <iframe id="frame" src="dashboard.html"></iframe>
+<iframe id="frame"></iframe>
   </div>
 
   <!-- NAVBAR -->
   <nav class="navbar">
-    <div class="nav-item active" onclick="go(this,'dashboard.html')">
+<div class="nav-item" onclick="go(this,'dashboard.html')">
       <i class="ri-dashboard-line"></i>
       Dashboard
     </div>
@@ -218,7 +218,7 @@ if (
 
 /* ===== NAVEGAÇÃO ===== */
 const frame = document.getElementById("frame");
-let paginaAtual = "dashboard.html";
+let paginaAtual = "";
 
 function go(el, page){
   if(paginaAtual === page) return;
@@ -235,7 +235,12 @@ function go(el, page){
 /* ===== SERVICE WORKER ===== */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
-}
+}// ===== INICIALIZA APP =====
+window.addEventListener('load', () => {
+  const primeiroBotao = document.querySelector('.nav-item');
+  go(primeiroBotao, 'dashboard.html');
+});
+
 </script>
 
 </body>
