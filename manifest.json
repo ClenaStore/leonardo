@@ -2,7 +2,7 @@
   "name": "Grupo DV",
   "short_name": "DV",
   "description": "Aplicação interna Grupo DV",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
