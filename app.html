@@ -235,11 +235,13 @@ function go(el, page){
 /* ===== SERVICE WORKER ===== */
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js');
-}// ===== INICIALIZA APP =====
+}
+// ===== INICIALIZA A PRIMEIRA TELA =====
 window.addEventListener('load', () => {
   const primeiroBotao = document.querySelector('.nav-item');
   go(primeiroBotao, 'dashboard.html');
 });
+
 
 </script>
 
