@@ -27,9 +27,32 @@ html,body{
   color:var(--text);
   overflow:auto;
 }
+html, body {
+  overflow-x: hidden;
+}
 .header{padding:16px}
 .header h2{font-size:18px;font-weight:800}
 .header span{font-size:12px;color:var(--muted)}
+
+.filtros{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:8px;
+  padding:0 16px 10px;
+}
+.filtros input, .filtros button{
+  background:#0f0f0f;
+  border:1px solid var(--border);
+  color:#fff;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:13px;
+}
+.filtros button{
+  background:linear-gradient(135deg,#d4af37,#f5d97a);
+  color:#000;
+  font-weight:800;
+}
 
 .actions{
   padding:0 16px 10px;
@@ -44,6 +67,15 @@ html,body{
   font-weight:800;
   font-size:13px;
   cursor:pointer;
+}
+
+/* Área capturada como imagem (formato celular) */
+.mobile-capture{
+  width:390px;           /* largura típica de celular */
+  max-width:100%;
+  margin:0 auto;        /* centraliza */
+  background:var(--bg);
+  padding-bottom:8px;
 }
 
 .grupo{padding:0 16px 16px}
@@ -86,12 +118,18 @@ html,body{
 
 <body>
 
-<!-- Tudo que será exportado como imagem fica dentro deste container -->
-<div id="capture">
+<!-- CONTEÚDO CAPTURADO (estreito para celular) -->
+<div id="capture" class="mobile-capture">
 
   <div class="header">
     <h2>Resumo de Vendas</h2>
     <span id="subtitulo">—</span>
+  </div>
+
+  <div class="filtros">
+    <input type="date" id="dataInicio">
+    <input type="date" id="dataFim">
+    <button onclick="aplicarFiltro()">Filtrar</button>
   </div>
 
   <div class="grupo">
@@ -144,17 +182,9 @@ const categoriasAgrupadas = {
   "outros": []
 };
 
-/* ================= FILTROS (IGUAL AO SEU) ================= */
-const EMPRESA = localStorage.getItem("EMPRESA_ATIVA") || "todas";
-const DATA_INICIO = localStorage.getItem("DATA_INICIO");
-const DATA_FIM = localStorage.getItem("DATA_FIM");
-
 /* ================= UTIL ================= */
 const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
 const fmtBR = d => d.split("-").reverse().join("/");
-
-document.getElementById("subtitulo").innerText =
-  `${EMPRESA} • ${DATA_INICIO ? fmtBR(DATA_INICIO) : "—"} até ${DATA_FIM ? fmtBR(DATA_FIM) : "—"}`;
 
 /* ================= NORMALIZAÇÃO SEGURA ================= */
 function normalizarCategoria(mod){
@@ -174,8 +204,8 @@ function classificarEmpresa(nome){
   return "outros";
 }
 
-/* ================= BUSCAR TODOS OS REGISTROS (IGUAL AO SEU) ================= */
-async function carregarDados(){
+/* ================= BUSCAR COM FILTRO DE DATA ================= */
+async function carregarDados(di, df){
   let todos = [];
   let from = 0;
   const step = 1000;
@@ -186,9 +216,8 @@ async function carregarDados(){
       .order("data_lancamento",{ascending:true})
       .range(from, from + step - 1);
 
-    if(EMPRESA !== "todas") q = q.eq("empresa", EMPRESA);
-    if(DATA_INICIO) q = q.gte("data_lancamento", DATA_INICIO);
-    if(DATA_FIM) q = q.lte("data_lancamento", DATA_FIM);
+    if(di) q = q.gte("data_lancamento", di);
+    if(df) q = q.lte("data_lancamento", df);
 
     const { data, error } = await q;
     if(error || !data.length) break;
@@ -197,11 +226,11 @@ async function carregarDados(){
     from += step;
   }
 
-  montarResumo(todos);
+  montarResumo(todos, di, df);
 }
 
 /* ================= MONTAR RESUMO ================= */
-function montarResumo(lista){
+function montarResumo(lista, di, df){
   const porEmpresa = {};
 
   lista.forEach(l=>{
@@ -246,25 +275,35 @@ function montarResumo(lista){
 
   if(!emporio.innerHTML) emporio.innerHTML = '<div class="muted">Sem vendas</div>';
   if(!restaurante.innerHTML) restaurante.innerHTML = '<div class="muted">Sem vendas</div>';
+
+  document.getElementById("subtitulo").innerText =
+    `${di ? fmtBR(di) : "—"} até ${df ? fmtBR(df) : "—"}`;
 }
 
-/* ================= BAIXAR COMO IMAGEM ================= */
+function aplicarFiltro(){
+  const di = document.getElementById("dataInicio").value;
+  const df = document.getElementById("dataFim").value;
+  carregarDados(di, df);
+}
+
+/* ================= BAIXAR COMO IMAGEM (NÍTIDA E ESTREITA) ================= */
 async function baixarImagem(){
   const el = document.getElementById("capture");
   const canvas = await html2canvas(el, {
     backgroundColor: "#0b0b0b",
-    scale: 2,       // aumenta a qualidade
-    useCORS: true
+    scale: 3,
+    useCORS: true,
+    windowWidth: el.scrollWidth,
+    windowHeight: el.scrollHeight
   });
-
   const link = document.createElement("a");
   link.download = `resumo-${new Date().toISOString().slice(0,10)}.png`;
-  link.href = canvas.toDataURL("image/png");
+  link.href = canvas.toDataURL("image/png", 1.0);
   link.click();
 }
 
-/* INIT (IGUAL AO SEU) */
-carregarDados();
+/* INIT */
+aplicarFiltro();
 </script>
 
 </body>
