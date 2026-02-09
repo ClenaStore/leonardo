@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
 <style>
 :root{
@@ -19,102 +19,45 @@
   --muted:#9ca3af;
   --radius:16px;
   --radius-sm:12px;
-  --shadow:0 8px 24px rgba(0,0,0,.35);
 }
 *{box-sizing:border-box;font-family:Inter}
 html,body{width:100%;overflow-x:hidden}
 body{
-  margin:0;
-  background:
-    radial-gradient(1200px 600px at 50% -10%, rgba(212,175,55,.08), transparent 60%),
-    var(--bg);
-  color:var(--text);
+  margin:0;background:var(--bg);color:var(--text);
   padding:12px 12px 20px;
 }
-
-/* Topo */
 .topo{
-  position:sticky; top:0; z-index:10;
-  background:linear-gradient(180deg, rgba(11,11,11,.95), rgba(11,11,11,.88));
-  backdrop-filter: blur(8px);
+  position:sticky;top:0;z-index:10;
+  background:rgba(11,11,11,.95);
+  backdrop-filter: blur(6px);
   border-bottom:1px solid var(--border);
-  padding:10px 0 12px;
-  margin-bottom:10px;
+  padding-bottom:10px;margin-bottom:10px;
 }
-.header{
-  display:flex; align-items:center; justify-content:space-between; gap:8px;
-  padding:0 2px 8px;
-}
-.header h1{
-  font-size:16px; font-weight:800; letter-spacing:.3px;
-}
-.header .chip{
-  font-size:11px; color:#000; background:linear-gradient(135deg,var(--gold),var(--gold-2));
-  padding:4px 8px; border-radius:999px; font-weight:800;
-}
-.filtros{
-  display:grid; grid-template-columns:1fr auto; gap:8px;
-}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.header h1{font-size:16px;font-weight:800}
+.filtros{display:grid;grid-template-columns:1fr auto;gap:8px}
 input,button{
-  width:100%; min-height:44px;
-  background:#0f0f0f; border:1px solid var(--border);
-  color:#fff; padding:10px 12px; border-radius:var(--radius-sm);
-  font-size:14px;
+  width:100%;min-height:44px;background:#0f0f0f;border:1px solid var(--border);
+  color:#fff;padding:10px 12px;border-radius:12px;font-size:14px
 }
 button{
   background:linear-gradient(135deg,var(--gold),var(--gold-2));
-  color:#000; font-weight:800; border:none;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,.15), 0 8px 18px rgba(212,175,55,.25);
+  color:#000;font-weight:800;border:none
 }
-
-/* Seções */
 .section{margin-bottom:14px}
-.section h3{
-  font-size:12px; color:var(--muted); letter-spacing:.4px;
-  margin:6px 4px 8px;
-}
-
-/* Cards */
+.section h3{font-size:12px;color:var(--muted);margin:6px 4px 8px}
 .card{
-  background:linear-gradient(180deg, #171717, #121212);
+  background:linear-gradient(180deg,#171717,#121212);
   border:1px solid var(--border);
   border-radius:var(--radius);
-  box-shadow: var(--shadow);
-  padding:12px;
-  margin-bottom:10px;
+  padding:12px;margin-bottom:10px
 }
-.card .top{
-  display:flex; justify-content:space-between; align-items:center; gap:8px;
-  margin-bottom:8px;
-}
-.card .empresa{
-  font-weight:800; font-size:14px; color:var(--gold);
-  max-width:70%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-}
-.card .total{
-  font-weight:900; font-size:16px; letter-spacing:.2px;
-}
-.linha{
-  display:flex; justify-content:space-between; align-items:center;
-  font-size:13px; padding:4px 0; color:#e5e7eb;
-  border-top:1px dashed rgba(255,255,255,.06);
-}
-.linha:first-of-type{border-top:none}
-.badge{
-  font-size:10px; color:#0b0b0b; background:rgba(212,175,55,.85);
-  padding:3px 6px; border-radius:999px; font-weight:900;
-}
-
-/* Estados */
-.muted{
-  color:var(--muted); font-size:13px; text-align:center; padding:16px 8px;
-  border:1px dashed var(--border); border-radius:var(--radius);
-}
-
-/* Rodapé */
-.footer{
-  text-align:center; color:var(--muted); font-size:11px; margin-top:10px;
-}
+.card .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.empresa{font-weight:800;font-size:14px;color:var(--gold);max-width:70%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.total{font-weight:900;font-size:16px}
+.linha{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-top:1px dashed rgba(255,255,255,.06)}
+.muted{color:var(--muted);font-size:13px;text-align:center;padding:16px;border:1px dashed var(--border);border-radius:var(--radius)}
+.err{background:#2a0b0b;border:1px solid #7f1d1d;color:#fecaca;padding:10px;border-radius:12px;margin:10px 0;font-size:12px}
 </style>
 </head>
 
@@ -123,11 +66,10 @@ button{
 <div class="topo">
   <div class="header">
     <h1>Resumo Diário</h1>
-    <span class="chip">WhatsApp</span>
   </div>
   <div class="filtros">
     <input type="date" id="data" />
-    <button onclick="carregar()">Gerar</button>
+    <button id="btn">Gerar</button>
   </div>
 </div>
 
@@ -146,16 +88,15 @@ button{
   <div id="outros"></div>
 </div>
 
-<div class="footer">Pronto para printar e enviar no WhatsApp</div>
+<div id="status"></div>
 
 <script>
-const { createClient } = supabase;
-const sb = createClient(
-  "https://dxkszikemntfusfyrzos.supabase.co",
-  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
-);
+/* ===== SUPABASE ===== */
+const SUPABASE_URL = "https://dxkszikemntfusfyrzos.supabase.co";
+const SUPABASE_KEY = "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* Mapeamento simples de finalizadoras */
+/* ===== FINALIZADORAS ===== */
 const categoriasAgrupadas = {
   "Pix": ["pix","qrcode","pix tef","pix cnpj","pix offline"],
   "Crédito": ["credito","cartao credito","credito pos","cart crédito","crédito"],
@@ -177,7 +118,7 @@ function normalizarCategoria(mod){
   return "Outros";
 }
 
-/* Regra de separação Empório × Restaurante (igual você já usa) */
+/* ===== Separação Empório × Restaurante ===== */
 function classificarEmpresa(nome){
   const n = (nome||"").toLowerCase();
   if(n.includes("emp")) return "emporio";
@@ -185,72 +126,82 @@ function classificarEmpresa(nome){
   return "outros";
 }
 
+/* ===== Carregar ===== */
 async function carregar(){
+  status.innerHTML = "";
+  emporio.innerHTML = restaurante.innerHTML = outros.innerHTML = "";
+  sec_outros.style.display = "none";
+
   const data = document.getElementById("data").value;
-  if(!data) return alert("Selecione a data");
-
-  const { data: rows, error } = await sb
-    .from("resumo_entradas")
-    .select("valor, empresa, modalidade")
-    .eq("data_lancamento", data);
-
-  if(error){
-    alert("Erro ao buscar dados");
-    console.error(error);
+  if(!data){
+    status.innerHTML = '<div class="err">Selecione uma data.</div>';
     return;
   }
 
-  const porEmpresa = {};
+  try{
+    const { data: rows, error } = await sb
+      .from("resumo_entradas")
+      .select("valor, empresa, modalidade")
+      .eq("data_lancamento", data);
 
-  rows.forEach(r=>{
-    const v = Number(r.valor)||0;
-    if(!porEmpresa[r.empresa]) porEmpresa[r.empresa] = { total:0, cats:{} };
-    porEmpresa[r.empresa].total += v;
+    if(error) throw error;
 
-    const cat = normalizarCategoria(r.modalidade);
-    porEmpresa[r.empresa].cats[cat] = (porEmpresa[r.empresa].cats[cat]||0) + v;
-  });
-
-  emporio.innerHTML = "";
-  restaurante.innerHTML = "";
-  outros.innerHTML = "";
-  sec_outros.style.display = "none";
-
-  Object.entries(porEmpresa).forEach(([empresa,info])=>{
-    const linhas = Object.entries(info.cats)
-      .sort((a,b)=>b[1]-a[1])
-      .map(([c,v])=>`
-        <div class="linha">
-          <span>• ${c}</span>
-          <strong>R$ ${BRL(v)}</strong>
-        </div>
-      `).join("");
-
-    const bloco = `
-      <div class="card">
-        <div class="top">
-          <div class="empresa" title="${empresa}">${empresa}</div>
-          <div class="total">R$ ${BRL(info.total)}</div>
-        </div>
-        ${linhas}
-      </div>
-    `;
-
-    const grupo = classificarEmpresa(empresa);
-    if(grupo === "emporio") emporio.innerHTML += bloco;
-    else if(grupo === "restaurante") restaurante.innerHTML += bloco;
-    else{
-      sec_outros.style.display = "block";
-      outros.innerHTML += bloco;
+    if(!rows || !rows.length){
+      emporio.innerHTML = '<div class="muted">Sem vendas no dia selecionado.</div>';
+      restaurante.innerHTML = '<div class="muted">Sem vendas no dia selecionado.</div>';
+      return;
     }
-  });
 
-  if(!emporio.innerHTML) emporio.innerHTML = `<div class="muted">Sem vendas no dia selecionado.</div>`;
-  if(!restaurante.innerHTML) restaurante.innerHTML = `<div class="muted">Sem vendas no dia selecionado.</div>`;
+    const porEmpresa = {};
+    rows.forEach(r=>{
+      const v = Number(r.valor)||0;
+      if(!porEmpresa[r.empresa]) porEmpresa[r.empresa] = { total:0, cats:{} };
+      porEmpresa[r.empresa].total += v;
+      const cat = normalizarCategoria(r.modalidade);
+      porEmpresa[r.empresa].cats[cat] = (porEmpresa[r.empresa].cats[cat]||0) + v;
+    });
+
+    Object.entries(porEmpresa).forEach(([empresa,info])=>{
+      const linhas = Object.entries(info.cats)
+        .sort((a,b)=>b[1]-a[1])
+        .map(([c,v])=>`
+          <div class="linha">
+            <span>• ${c}</span>
+            <strong>R$ ${BRL(v)}</strong>
+          </div>
+        `).join("");
+
+      const bloco = `
+        <div class="card">
+          <div class="top">
+            <div class="empresa" title="${empresa}">${empresa}</div>
+            <div class="total">R$ ${BRL(info.total)}</div>
+          </div>
+          ${linhas}
+        </div>
+      `;
+
+      const grupo = classificarEmpresa(empresa);
+      if(grupo === "emporio") emporio.innerHTML += bloco;
+      else if(grupo === "restaurante") restaurante.innerHTML += bloco;
+      else{
+        sec_outros.style.display = "block";
+        outros.innerHTML += bloco;
+      }
+    });
+
+    if(!emporio.innerHTML) emporio.innerHTML = '<div class="muted">Sem vendas no dia selecionado.</div>';
+    if(!restaurante.innerHTML) restaurante.innerHTML = '<div class="muted">Sem vendas no dia selecionado.</div>';
+
+  }catch(err){
+    console.error("Erro Supabase:", err);
+    status.innerHTML = '<div class="err">Erro ao carregar dados. Veja o console (F12) para detalhes.</div>';
+  }
 }
 
-// Sugere hoje automaticamente
-document.getElementById("data").valueAsDate = new Date();
+/* Eventos */
+document.getElementById("btn").addEventListener("click", carregar);
+document.getElementById("data").valueAsDate = new Date(); // sugere hoje
 </script>
 
 </body>
