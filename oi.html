@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Resumo de Vendas • Diário</title>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+:root{
+  --bg:#0b0b0b;
+  --card:#151515;
+  --border:#242424;
+  --gold:#d4af37;
+  --green:#22c55e;
+  --text:#f5f5f5;
+  --muted:#9ca3af;
+}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Inter}
+body{
+  background:var(--bg);
+  color:var(--text);
+}
+
+.header{
+  padding:16px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.header h2{font-size:18px;font-weight:800}
+
+.filtros{
+  display:grid;
+  grid-template-columns:1fr auto;
+  gap:8px;
+}
+.filtros input, .filtros button{
+  background:#0f0f0f;
+  border:1px solid var(--border);
+  color:#fff;
+  padding:10px 12px;
+  border-radius:10px;
+  font-size:13px;
+}
+.filtros button{
+  background:linear-gradient(135deg,#d4af37,#f5d97a);
+  color:#000;
+  font-weight:800;
+  cursor:pointer;
+}
+
+.cards{padding:0 16px;display:grid;gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px}
+.card .label{font-size:12px;color:var(--muted)}
+.card .value{font-size:22px;font-weight:800;margin-top:6px}
+.gold{color:var(--gold)}
+.green{color:var(--green)}
+
+.section{
+  margin:16px;
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:14px;
+}
+.section h3{
+  font-size:13px;
+  color:var(--muted);
+  margin-bottom:10px;
+}
+
+.lista .item{
+  display:flex;
+  justify-content:space-between;
+  padding:10px 0;
+  border-bottom:1px dashed var(--border);
+  font-size:13px;
+}
+
+canvas{margin-top:8px}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h2>Resumo de Vendas (por dia)</h2>
+
+  <div class="filtros">
+    <input type="date" id="filtroData">
+    <button onclick="carregar()">Filtrar</button>
+  </div>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Total do Dia</div>
+    <div class="value gold" id="totalDia">R$ 0,00</div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Empresas no dia</h3>
+  <div class="lista" id="listaEmpresas"></div>
+</div>
+
+<div class="section">
+  <h3>Finalizadoras no dia</h3>
+  <div class="lista" id="listaFinalizadoras"></div>
+</div>
+
+<div class="section">
+  <h3>Distribuição por modalidade</h3>
+  <canvas id="grafico" height="180"></canvas>
+</div>
+
+<script>
+const { createClient } = supabase;
+const sb = createClient(
+  "https://dxkszikemntfusfyrzos.supabase.co",
+  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
+);
+
+const categoriasAgrupadas = {
+  "Crédito": ["credito","cartao credito","credito pos"],
+  "Débito": ["debito","cartao debito","debito pos"],
+  "Pix": ["pix","qrcode","pix tef","pix cnpj"],
+  "Dinheiro": ["dinheiro"],
+  "Voucher": ["voucher"],
+  "Online": ["online"],
+  "Outros": []
+};
+
+let chart;
+
+const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
+
+function normalizarCategoria(mod){
+  if(!mod) return "Outros";
+  const m = mod.toLowerCase();
+  for(const [cat,keys] of Object.entries(categoriasAgrupadas)){
+    if(keys.some(k => m.includes(k))) return cat;
+  }
+  return "Outros";
+}
+
+async function carregar(){
+  const data = document.getElementById("filtroData").value;
+  if(!data) return alert("Selecione uma data");
+
+  const { data: rows, error } = await sb
+    .from("resumo_entradas")
+    .select("valor, empresa, modalidade")
+    .eq("data_lancamento", data);
+
+  if(error) return alert("Erro ao buscar dados");
+
+  let total = 0;
+  const porEmpresa = {};
+  const porFinalizadora = {};
+
+  rows.forEach(r=>{
+    const v = Number(r.valor)||0;
+    total += v;
+
+    porEmpresa[r.empresa] = (porEmpresa[r.empresa]||0) + v;
+
+    const cat = normalizarCategoria(r.modalidade);
+    porFinalizadora[cat] = (porFinalizadora[cat]||0) + v;
+  });
+
+  totalDia.innerText = `R$ ${BRL(total)}`;
+
+  listaEmpresas.innerHTML = Object.entries(porEmpresa)
+    .map(([e,v])=>`<div class="item"><span>${e}</span><span>R$ ${BRL(v)}</span></div>`)
+    .join("");
+
+  listaFinalizadoras.innerHTML = Object.entries(porFinalizadora)
+    .map(([c,v])=>`<div class="item"><span>${c}</span><span>R$ ${BRL(v)}</span></div>`)
+    .join("");
+
+  if(chart) chart.destroy();
+  chart = new Chart(grafico,{
+    type:"doughnut",
+    data:{
+      labels:Object.keys(porFinalizadora),
+      datasets:[{
+        data:Object.values(porFinalizadora),
+        borderWidth:0
+      }]
+    },
+    options:{
+      plugins:{
+        legend:{labels:{color:"#9ca3af"}},
+        tooltip:{callbacks:{label:c=>`R$ ${BRL(c.raw)}`}}
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
