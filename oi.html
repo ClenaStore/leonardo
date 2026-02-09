@@ -17,94 +17,24 @@
   --text:#f5f5f5;
   --muted:#9ca3af;
 }
-
 *{box-sizing:border-box;font-family:Inter}
-html,body{
-  width:100%;
-  overflow-x:hidden;
-}
-
-body{
-  margin:0;
-  background:var(--bg);
-  color:var(--text);
-  padding:12px;
-}
+html,body{width:100%;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);padding:12px}
 
 /* topo */
-.topo{
-  position:sticky;
-  top:0;
-  background:linear-gradient(180deg, rgba(11,11,11,.95), rgba(11,11,11,.85));
-  backdrop-filter: blur(6px);
-  z-index:9;
-  padding-bottom:8px;
-  margin-bottom:10px;
-}
-
-.filtros{
-  display:grid;
-  grid-template-columns:1fr auto;
-  gap:8px;
-}
-
-input,button{
-  width:100%;
-  min-height:44px;          /* tamanho confortável pro dedo */
-  background:#0f0f0f;
-  border:1px solid var(--border);
-  color:#fff;
-  padding:10px 12px;
-  border-radius:12px;
-  font-size:14px;
-}
-
-button{
-  background:linear-gradient(135deg,#d4af37,#f5d97a);
-  color:#000;
-  font-weight:800;
-}
+.topo{position:sticky;top:0;background:rgba(11,11,11,.9);backdrop-filter:blur(6px);padding-bottom:8px;margin-bottom:10px}
+.filtros{display:grid;grid-template-columns:1fr auto;gap:8px}
+input,button{width:100%;min-height:44px;background:#0f0f0f;border:1px solid var(--border);color:#fff;padding:10px 12px;border-radius:12px;font-size:14px}
+button{background:linear-gradient(135deg,#d4af37,#f5d97a);color:#000;font-weight:800}
 
 /* blocos */
-.bloco{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:16px;
-  padding:12px;
-  margin-bottom:10px;
-}
-
-.linha-topo{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:8px;
-  margin-bottom:6px;
-}
-
-.empresa{
-  font-weight:800;
-  font-size:14px;
-  color:var(--gold);
-  max-width:70%;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-
-.total{
-  font-weight:800;
-  font-size:15px;
-}
-
-.finalizadora{
-  display:flex;
-  justify-content:space-between;
-  font-size:13px;
-  padding:4px 0;
-  color:#e5e7eb;
-}
-
+.grupo{margin-bottom:14px}
+.grupo h3{font-size:13px;color:var(--muted);margin:6px 4px 8px}
+.bloco{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:12px;margin-bottom:10px}
+.linha-topo{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.empresa{font-weight:800;font-size:14px;color:var(--gold);max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.total{font-weight:800;font-size:15px}
+.finalizadora{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:#e5e7eb}
 .muted{color:var(--muted);font-size:13px;text-align:center;margin-top:20px}
 </style>
 </head>
@@ -118,7 +48,20 @@ button{
   </div>
 </div>
 
-<div id="resultado"></div>
+<div id="grupo-emporio" class="grupo">
+  <h3>EMPÓRIO</h3>
+  <div id="emporio"></div>
+</div>
+
+<div id="grupo-restaurante" class="grupo">
+  <h3>RESTAURANTE</h3>
+  <div id="restaurante"></div>
+</div>
+
+<div id="grupo-outros" class="grupo" style="display:none">
+  <h3>OUTRAS EMPRESAS</h3>
+  <div id="outros"></div>
+</div>
 
 <script>
 const { createClient } = supabase;
@@ -148,6 +91,13 @@ function normalizarCategoria(mod){
   return "Outros";
 }
 
+function classificarEmpresa(nome){
+  const n = (nome||"").toLowerCase();
+  if(n.includes("emp")) return "emporio";
+  if(n.includes("rest")) return "restaurante";
+  return "outros";
+}
+
 async function carregar(){
   const data = document.getElementById("data").value;
   if(!data) return alert("Selecione uma data");
@@ -170,25 +120,40 @@ async function carregar(){
     porEmpresa[r.empresa].cats[cat] = (porEmpresa[r.empresa].cats[cat]||0) + v;
   });
 
-  const html = Object.entries(porEmpresa).map(([empresa,info])=>`
-    <div class="bloco">
-      <div class="linha-topo">
-        <div class="empresa" title="${empresa}">${empresa}</div>
-        <div class="total">R$ ${BRL(info.total)}</div>
-      </div>
-      ${Object.entries(info.cats).map(([c,v])=>`
-        <div class="finalizadora">
-          <span>• ${c}</span>
-          <span>R$ ${BRL(v)}</span>
-        </div>
-      `).join("")}
-    </div>
-  `).join("");
+  emporio.innerHTML = "";
+  restaurante.innerHTML = "";
+  outros.innerHTML = "";
 
-  resultado.innerHTML = html || `<div class="muted">Sem vendas nessa data.</div>`;
+  Object.entries(porEmpresa).forEach(([empresa,info])=>{
+    const bloco = `
+      <div class="bloco">
+        <div class="linha-topo">
+          <div class="empresa" title="${empresa}">${empresa}</div>
+          <div class="total">R$ ${BRL(info.total)}</div>
+        </div>
+        ${Object.entries(info.cats).map(([c,v])=>`
+          <div class="finalizadora">
+            <span>• ${c}</span>
+            <span>R$ ${BRL(v)}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
+    const grupo = classificarEmpresa(empresa);
+    if(grupo === "emporio") emporio.innerHTML += bloco;
+    else if(grupo === "restaurante") restaurante.innerHTML += bloco;
+    else {
+      grupo_outros.style.display = "block";
+      outros.innerHTML += bloco;
+    }
+  });
+
+  if(!emporio.innerHTML) emporio.innerHTML = `<div class="muted">Sem vendas</div>`;
+  if(!restaurante.innerHTML) restaurante.innerHTML = `<div class="muted">Sem vendas</div>`;
+  if(!outros.innerHTML) grupo_outros.style.display = "none";
 }
 
-// já sugere hoje
+// sugere hoje
 document.getElementById("data").valueAsDate = new Date();
 </script>
 
