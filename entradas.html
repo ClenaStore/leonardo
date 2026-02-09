@@ -2,13 +2,12 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Resumo de Vendas</title>
+<title>Resumo de Vendas • WhatsApp</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
 :root{
@@ -16,7 +15,6 @@
   --card:#151515;
   --border:#242424;
   --gold:#d4af37;
-  --green:#22c55e;
   --text:#f5f5f5;
   --muted:#9ca3af;
 }
@@ -27,29 +25,46 @@ html,body{
   background:var(--bg);
   color:var(--text);
   overflow:auto;
-  scrollbar-width:none;        /* Firefox */
 }
-body::-webkit-scrollbar{
-  display:none;               /* Chrome / Edge / Safari */
-}
-
 .header{padding:16px}
 .header h2{font-size:18px;font-weight:800}
 .header span{font-size:12px;color:var(--muted)}
 
-.cards{padding:0 16px;display:grid;gap:12px}
-.card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:16px}
-.card .label{font-size:12px;color:var(--muted)}
-.card .value{font-size:22px;font-weight:800;margin-top:6px}
-.gold{color:var(--gold)}
-.green{color:var(--green)}
-
-.chart-box{margin:16px;background:var(--card);border:1px solid var(--border);border-radius:18px;padding:12px}
-.chart-box h3{font-size:13px;color:var(--muted);margin-bottom:8px}
-
-.lista{padding:0 16px 24px}
-.item{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--border)}
-.item span{font-size:13px}
+.grupo{padding:0 16px 16px}
+.grupo h3{
+  font-size:12px;
+  color:var(--muted);
+  margin:10px 0 6px;
+}
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:10px;
+}
+.top{
+  display:flex;
+  justify-content:space-between;
+  font-weight:800;
+  color:var(--gold);
+  margin-bottom:6px;
+}
+.item{
+  display:flex;
+  justify-content:space-between;
+  padding:6px 0;
+  font-size:13px;
+  border-bottom:1px dashed var(--border);
+}
+.item:last-child{border-bottom:none}
+.muted{
+  color:var(--muted);
+  font-size:13px;
+  padding:10px;
+  border:1px dashed var(--border);
+  border-radius:12px;
+}
 </style>
 </head>
 
@@ -60,29 +75,20 @@ body::-webkit-scrollbar{
   <span id="subtitulo">—</span>
 </div>
 
-<div class="cards">
-  <div class="card">
-    <div class="label">Entradas Financeiras</div>
-    <div class="value gold" id="totalVendas">R$ 0,00</div>
-  </div>
-
-  <div class="card">
-    <div class="label">Ticket Médio Diário</div>
-    <div class="value green" id="ticketMedio">R$ 0,00</div>
-  </div>
-
-  <div class="card">
-    <div class="label">Dias com Movimento</div>
-    <div class="value" id="quantidade">0</div>
-  </div>
+<div class="grupo">
+  <h3>EMPÓRIO</h3>
+  <div id="emporio"></div>
 </div>
 
-<div class="chart-box">
-  <h3>Entradas por dia</h3>
-  <canvas id="grafico" height="180"></canvas>
+<div class="grupo">
+  <h3>RESTAURANTE</h3>
+  <div id="restaurante"></div>
 </div>
 
-<div class="lista" id="listaCategorias"></div>
+<div class="grupo" id="grupo-outros" style="display:none">
+  <h3>OUTRAS EMPRESAS</h3>
+  <div id="outros"></div>
+</div>
 
 <script>
 /* ================= SUPABASE ================= */
@@ -113,22 +119,17 @@ const categoriasAgrupadas = {
   "outros": []
 };
 
-/* ================= FILTROS ================= */
+/* ================= FILTROS (IGUAL AO SEU) ================= */
 const EMPRESA = localStorage.getItem("EMPRESA_ATIVA") || "todas";
 const DATA_INICIO = localStorage.getItem("DATA_INICIO");
 const DATA_FIM = localStorage.getItem("DATA_FIM");
 
 /* ================= UTIL ================= */
-const BRL = v => Number(v).toLocaleString("pt-BR",{
-  minimumFractionDigits:2,
-  maximumFractionDigits:2
-});
+const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
 const fmtBR = d => d.split("-").reverse().join("/");
 
 document.getElementById("subtitulo").innerText =
   `${EMPRESA} • ${DATA_INICIO ? fmtBR(DATA_INICIO) : "—"} até ${DATA_FIM ? fmtBR(DATA_FIM) : "—"}`;
-
-let chart;
 
 /* ================= NORMALIZAÇÃO SEGURA ================= */
 function normalizarCategoria(mod){
@@ -140,7 +141,15 @@ function normalizarCategoria(mod){
   return "outros";
 }
 
-/* ================= BUSCAR TODOS OS REGISTROS ================= */
+/* ================= CLASSIFICAR EMPRESA ================= */
+function classificarEmpresa(nome){
+  const n = (nome||"").toLowerCase();
+  if(n.includes("emp")) return "emporio";
+  if(n.includes("rest")) return "restaurante";
+  return "outros";
+}
+
+/* ================= BUSCAR TODOS OS REGISTROS (IGUAL AO SEU) ================= */
 async function carregarDados(){
   let todos = [];
   let from = 0;
@@ -166,83 +175,55 @@ async function carregarDados(){
   montarResumo(todos);
 }
 
-/* ================= RESUMO ================= */
+/* ================= MONTAR RESUMO ================= */
 function montarResumo(lista){
-  let total = 0;
-  const porDia = {};
-  const porCategoria = {};
+  const porEmpresa = {};
 
   lista.forEach(l=>{
     const v = Number(l.valor) || 0;
-    total += v; // TOTAL SEMPRE SOMA
-
-    porDia[l.data_lancamento] =
-      (porDia[l.data_lancamento] || 0) + v;
+    if(!porEmpresa[l.empresa]) porEmpresa[l.empresa] = { total:0, cats:{} };
+    porEmpresa[l.empresa].total += v;
 
     const cat = normalizarCategoria(l.modalidade);
-    porCategoria[cat] =
-      (porCategoria[cat] || 0) + v;
+    porEmpresa[l.empresa].cats[cat] =
+      (porEmpresa[l.empresa].cats[cat] || 0) + v;
   });
 
-  const dias = Object.keys(porDia).length;
+  emporio.innerHTML = "";
+  restaurante.innerHTML = "";
+  outros.innerHTML = "";
+  document.getElementById("grupo-outros").style.display = "none";
 
-  totalVendas.innerText = `R$ ${BRL(total)}`;
-  quantidade.innerText = dias;
-  ticketMedio.innerText = dias ? `R$ ${BRL(total/dias)}` : "R$ 0,00";
+  Object.entries(porEmpresa).forEach(([empresa,info])=>{
+    const bloco = `
+      <div class="card">
+        <div class="top">
+          <span>${empresa}</span>
+          <span>R$ ${BRL(info.total)}</span>
+        </div>
+        ${Object.entries(info.cats).map(([c,v])=>`
+          <div class="item">
+            <span>• ${c}</span>
+            <span>R$ ${BRL(v)}</span>
+          </div>
+        `).join("")}
+      </div>
+    `;
 
-  if(chart) chart.destroy();
- chart = new Chart(grafico,{
-  type:"bar",
-  data:{
-    labels:Object.keys(porDia).map(fmtBR),
-datasets:[{
-  data: Object.values(porDia),
-  backgroundColor: "#d4af37",
-  borderRadius: 8,
-
-  barThickness: 12,
-  categoryPercentage: 0.6,
-  barPercentage: 0.8
-}]
-
-  },
-  options:{
-    plugins:{
-      legend:{display:false},
-      tooltip:{
-        callbacks:{
-          label:(ctx)=>`R$ ${BRL(ctx.raw)}`
-        }
-      }
-    },
-    scales:{
-      x:{
-        ticks:{color:"#9ca3af"},
-        grid:{display:false}
-      },
-      y:{
-        ticks:{
-          color:"#9ca3af",
-          callback:v=>`R$ ${BRL(v)}`
-        },
-        grid:{color:"#242424"}
-      }
+    const grupo = classificarEmpresa(empresa);
+    if(grupo === "emporio") emporio.innerHTML += bloco;
+    else if(grupo === "restaurante") restaurante.innerHTML += bloco;
+    else{
+      document.getElementById("grupo-outros").style.display = "block";
+      outros.innerHTML += bloco;
     }
-  }
-});
-
-
-  listaCategorias.innerHTML = "";
-  Object.entries(porCategoria).forEach(([c,v])=>{
-    listaCategorias.innerHTML += `
-      <div class="item">
-        <span>${c}</span>
-        <span>R$ ${BRL(v)}</span>
-      </div>`;
   });
+
+  if(!emporio.innerHTML) emporio.innerHTML = '<div class="muted">Sem vendas</div>';
+  if(!restaurante.innerHTML) restaurante.innerHTML = '<div class="muted">Sem vendas</div>';
 }
 
-/* INIT */
+/* INIT (IGUAL AO SEU) */
 carregarDados();
 </script>
 
