@@ -16,6 +16,7 @@
   --card:#151515;
   --border:#242424;
   --gold:#d4af37;
+  --gold2:#f5d97a;
   --text:#f5f5f5;
   --muted:#9ca3af;
 }
@@ -23,16 +24,27 @@
 html,body{
   width:100%;
   height:100%;
-  background:var(--bg);
+  background:radial-gradient(800px 300px at 50% -10%, rgba(212,175,55,.12), transparent 60%), var(--bg);
   color:var(--text);
   overflow:auto;
 }
-html, body {
-  overflow-x: hidden;
+html, body { overflow-x: hidden; }
+
+.header{
+  padding:18px 16px 10px;
+  text-align:center;
 }
-.header{padding:16px}
-.header h2{font-size:18px;font-weight:800}
-.header span{font-size:12px;color:var(--muted)}
+.header h2{
+  font-size:18px;
+  font-weight:800;
+  letter-spacing:.4px;
+}
+.header span{
+  display:inline-block;
+  margin-top:4px;
+  font-size:12px;
+  color:var(--muted);
+}
 
 .filtros{
   display:grid;
@@ -49,43 +61,35 @@ html, body {
   font-size:13px;
 }
 .filtros button{
-  background:linear-gradient(135deg,#d4af37,#f5d97a);
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
   color:#000;
   font-weight:800;
 }
 
-.actions{
-  padding:0 16px 10px;
-}
-.btn-download{
-  width:100%;
-  background:linear-gradient(135deg,#d4af37,#f5d97a);
-  color:#000;
-  border:none;
-  border-radius:12px;
-  padding:10px 14px;
-  font-weight:800;
-  font-size:13px;
-  cursor:pointer;
-}
-
-/* Área capturada como imagem (formato celular) */
+/* Área capturada como imagem */
 .mobile-capture{
-  width:390px;           /* largura típica de celular */
+  width:390px;
   max-width:100%;
-  margin:0 auto;        /* centraliza */
-  background:var(--bg);
-  padding-bottom:8px;
+  margin:12px auto 0;
+  background:linear-gradient(180deg,#0f0f0f,#0b0b0b);
+  border:1px solid rgba(212,175,55,.25);
+  border-radius:18px;
+  box-shadow:0 16px 40px rgba(0,0,0,.6);
+  overflow:hidden;
 }
 
-.grupo{padding:0 16px 16px}
-.grupo h3{
-  font-size:12px;
-  color:var(--muted);
-  margin:10px 0 6px;
+.grupo{
+  padding:12px 14px 8px;
 }
+.grupo h3{
+  font-size:11px;
+  color:var(--muted);
+  letter-spacing:.4px;
+  margin-bottom:6px;
+}
+
 .card{
-  background:var(--card);
+  background:linear-gradient(180deg,#161616,#121212);
   border:1px solid var(--border);
   border-radius:14px;
   padding:12px;
@@ -97,28 +101,47 @@ html, body {
   font-weight:800;
   color:var(--gold);
   margin-bottom:6px;
+  font-size:14px;
 }
 .item{
   display:flex;
   justify-content:space-between;
   padding:6px 0;
   font-size:13px;
-  border-bottom:1px dashed var(--border);
+  border-bottom:1px dashed rgba(255,255,255,.06);
 }
 .item:last-child{border-bottom:none}
 .muted{
   color:var(--muted);
-  font-size:13px;
+  font-size:12px;
   padding:10px;
   border:1px dashed var(--border);
   border-radius:12px;
+  margin:6px 0;
+}
+
+/* Ações */
+.actions{
+  padding:12px 16px 18px;
+}
+.btn-download{
+  width:100%;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  color:#000;
+  border:none;
+  border-radius:14px;
+  padding:12px 14px;
+  font-weight:800;
+  font-size:14px;
+  cursor:pointer;
+  box-shadow:0 10px 20px rgba(212,175,55,.25);
 }
 </style>
 </head>
 
 <body>
 
-<!-- CONTEÚDO CAPTURADO (estreito para celular) -->
+<!-- CONTEÚDO CAPTURADO -->
 <div id="capture" class="mobile-capture">
 
   <div class="header">
@@ -154,14 +177,11 @@ html, body {
 </div>
 
 <script>
-/* ================= SUPABASE ================= */
+/* === SUPABASE === */
 const { createClient } = supabase;
-const sb = createClient(
-  "https://dxkszikemntfusfyrzos.supabase.co",
-  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
-);
+const sb = createClient("https://dxkszikemntfusfyrzos.supabase.co","sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed");
 
-/* ================= AGRUPAMENTO ================= */
+/* === AGRUPAMENTO === */
 const categoriasAgrupadas = {
   "crédito": ["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
   "débito": ["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
@@ -182,11 +202,9 @@ const categoriasAgrupadas = {
   "outros": []
 };
 
-/* ================= UTIL ================= */
 const BRL = v => Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2});
 const fmtBR = d => d.split("-").reverse().join("/");
 
-/* ================= NORMALIZAÇÃO SEGURA ================= */
 function normalizarCategoria(mod){
   if(!mod || typeof mod !== "string") return "outros";
   const m = mod.toLowerCase().trim();
@@ -195,8 +213,6 @@ function normalizarCategoria(mod){
   }
   return "outros";
 }
-
-/* ================= CLASSIFICAR EMPRESA ================= */
 function classificarEmpresa(nome){
   const n = (nome||"").toLowerCase();
   if(n.includes("emp")) return "emporio";
@@ -204,43 +220,33 @@ function classificarEmpresa(nome){
   return "outros";
 }
 
-/* ================= BUSCAR COM FILTRO DE DATA ================= */
 async function carregarDados(di, df){
   let todos = [];
   let from = 0;
   const step = 1000;
-
   while(true){
     let q = sb.from("resumo_entradas")
       .select("data_lancamento, modalidade, valor, empresa")
       .order("data_lancamento",{ascending:true})
       .range(from, from + step - 1);
-
     if(di) q = q.gte("data_lancamento", di);
     if(df) q = q.lte("data_lancamento", df);
-
     const { data, error } = await q;
     if(error || !data.length) break;
-
     todos.push(...data);
     from += step;
   }
-
   montarResumo(todos, di, df);
 }
 
-/* ================= MONTAR RESUMO ================= */
 function montarResumo(lista, di, df){
   const porEmpresa = {};
-
   lista.forEach(l=>{
     const v = Number(l.valor) || 0;
     if(!porEmpresa[l.empresa]) porEmpresa[l.empresa] = { total:0, cats:{} };
     porEmpresa[l.empresa].total += v;
-
     const cat = normalizarCategoria(l.modalidade);
-    porEmpresa[l.empresa].cats[cat] =
-      (porEmpresa[l.empresa].cats[cat] || 0) + v;
+    porEmpresa[l.empresa].cats[cat] = (porEmpresa[l.empresa].cats[cat]||0) + v;
   });
 
   emporio.innerHTML = "";
@@ -261,9 +267,7 @@ function montarResumo(lista, di, df){
             <span>R$ ${BRL(v)}</span>
           </div>
         `).join("")}
-      </div>
-    `;
-
+      </div>`;
     const grupo = classificarEmpresa(empresa);
     if(grupo === "emporio") emporio.innerHTML += bloco;
     else if(grupo === "restaurante") restaurante.innerHTML += bloco;
@@ -286,7 +290,6 @@ function aplicarFiltro(){
   carregarDados(di, df);
 }
 
-/* ================= BAIXAR COMO IMAGEM (NÍTIDA E ESTREITA) ================= */
 async function baixarImagem(){
   const el = document.getElementById("capture");
   const canvas = await html2canvas(el, {
@@ -302,7 +305,6 @@ async function baixarImagem(){
   link.click();
 }
 
-/* INIT */
 aplicarFiltro();
 </script>
 
