@@ -300,29 +300,36 @@ lerArquivo(this.files[0],dados=>{
 
 pix=[]
 
-dados.forEach((linha,i)=>{
+const header = dados[0]
 
-linha.forEach(col=>{
+// localizar coluna valor automaticamente
+let colunaValor = header.findIndex(c =>
+String(c).toLowerCase().includes("valor")
+)
 
-let v=parseValor(col)
+if(colunaValor === -1){
+alert("Coluna VALOR não encontrada no relatório da REDE")
+return
+}
 
-if(v!==null){
+for(let i=1;i<dados.length;i++){
+
+let valor = parseValor(dados[i][colunaValor])
+
+if(valor !== null){
 
 pix.push({
-valor:v,
+valor:valor,
 linha:i+1
 })
+
+}
 
 }
 
 })
 
 })
-
-})
-
-})
-
 document.getElementById("banco").addEventListener("change",function(){
 
 lerArquivo(this.files[0],dados=>{
