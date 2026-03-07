@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+
+<meta charset="UTF-8">
+<title>Conciliador Financeiro</title>
+
+<meta name="viewport" content="width=device-width,initial-scale=1">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<style>
+
+*{
+box-sizing:border-box;
+font-family:Inter;
+}
+
+body{
+margin:0;
+background:#f4f6fb;
+}
+
+header{
+background:#111827;
+color:white;
+padding:20px;
+font-size:22px;
+font-weight:800;
+}
+
+.container{
+max-width:1300px;
+margin:auto;
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:10px;
+margin-bottom:20px;
+box-shadow:0 4px 15px rgba(0,0,0,0.05);
+}
+
+h2{
+margin-top:0;
+}
+
+input{
+margin:10px 0;
+}
+
+button{
+background:#111827;
+color:white;
+padding:12px 20px;
+border:none;
+border-radius:8px;
+font-weight:700;
+cursor:pointer;
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+gap:15px;
+margin-top:20px;
+}
+
+.indicador{
+background:#fafafa;
+border:1px solid #eee;
+padding:15px;
+border-radius:10px;
+}
+
+.indicador strong{
+display:block;
+font-size:22px;
+margin-top:5px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:20px;
+}
+
+th,td{
+padding:10px;
+border-bottom:1px solid #eee;
+font-size:14px;
+}
+
+th{
+background:#fafafa;
+text-align:left;
+}
+
+.ok{
+color:green;
+font-weight:700;
+}
+
+.erro{
+color:red;
+font-weight:700;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+Conciliador Financeiro
+</header>
+
+<div class="container">
+
+<div class="card">
+
+<h2>Importar Arquivos</h2>
+
+<label>Relatório de Cupons</label>
+<input type="file" id="cupons">
+
+<label>Relatório PIX Rede</label>
+<input type="file" id="pix">
+
+<label>Extrato Bancário</label>
+<input type="file" id="banco">
+
+<br><br>
+
+<button onclick="conciliar()">CONCILIAR</button>
+
+</div>
+
+<div class="card">
+
+<h2>Indicadores</h2>
+
+<div class="grid">
+
+<div class="indicador">
+Vendas
+<strong id="totalVendas">0</strong>
+</div>
+
+<div class="indicador">
+Conciliadas
+<strong id="conciliadas">0</strong>
+</div>
+
+<div class="indicador">
+Não Encontradas
+<strong id="nao">0</strong>
+</div>
+
+<div class="indicador">
+Taxa
+<strong id="taxa">0%</strong>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Resultado da Conciliação</h2>
+
+<table id="resultado">
+
+<thead>
+
+<tr>
+<th>Valor Venda</th>
+<th>Valor Encontrado</th>
+<th>Arquivo</th>
+<th>Linha</th>
+<th>Status</th>
+</tr>
+
+</thead>
+
+<tbody></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+
+<script>
+
+let vendas=[]
+let pix=[]
+let banco=[]
+
+function lerArquivo(file,callback){
+
+const reader=new FileReader()
+
+reader.onload=function(e){
+
+const data=new Uint8Array(e.target.result)
+const workbook=XLSX.read(data,{type:'array'})
+const sheet=workbook.Sheets[workbook.SheetNames[0]]
+const json=XLSX.utils.sheet_to_json(sheet,{header:1})
+
+callback(json)
+
+}
+
+reader.readAsArrayBuffer(file)
+
+}
+
+
+
+document.getElementById("cupons").addEventListener("change",function(){
+
+lerArquivo(this.files[0],dados=>{
+
+vendas=[]
+
+dados.forEach((linha,i)=>{
+
+linha.forEach(col=>{
+
+if(typeof col==="number"){
+
+vendas.push({
+valor:Number(col.toFixed(2)),
+linha:i+1
+})
+
+}
+
+})
+
+})
+
+})
+
+})
+
+
+
+document.getElementById("pix").addEventListener("change",function(){
+
+lerArquivo(this.files[0],dados=>{
+
+pix=[]
+
+dados.forEach((linha,i)=>{
+
+linha.forEach(col=>{
+
+if(typeof col==="number"){
+
+pix.push({
+valor:Number(col.toFixed(2)),
+linha:i+1
+})
+
+}
+
+})
+
+})
+
+})
+
+})
+
+
+
+document.getElementById("banco").addEventListener("change",function(){
+
+lerArquivo(this.files[0],dados=>{
+
+banco=[]
+
+dados.forEach((linha,i)=>{
+
+linha.forEach(col=>{
+
+if(typeof col==="number"){
+
+banco.push({
+valor:Number(col.toFixed(2)),
+linha:i+1
+})
+
+}
+
+})
+
+})
+
+})
+
+})
+
+
+
+
+function conciliar(){
+
+let conciliadas=0
+let nao=0
+
+let tbody=document.querySelector("#resultado tbody")
+tbody.innerHTML=""
+
+vendas.forEach(v=>{
+
+let encontrado=null
+
+let achouPix=pix.find(p=>p.valor===v.valor)
+
+let achouBanco=banco.find(b=>b.valor===v.valor)
+
+
+if(achouPix){
+
+encontrado={
+valor:achouPix.valor,
+arquivo:"PIX",
+linha:achouPix.linha
+}
+
+}
+
+else if(achouBanco){
+
+encontrado={
+valor:achouBanco.valor,
+arquivo:"EXTRATO",
+linha:achouBanco.linha
+}
+
+}
+
+
+
+let tr=document.createElement("tr")
+
+if(encontrado){
+
+conciliadas++
+
+tr.innerHTML=`
+
+<td>R$ ${v.valor}</td>
+<td>R$ ${encontrado.valor}</td>
+<td>${encontrado.arquivo}</td>
+<td>${encontrado.linha}</td>
+<td class="ok">OK</td>
+
+`
+
+}
+
+else{
+
+nao++
+
+tr.innerHTML=`
+
+<td>R$ ${v.valor}</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td class="erro">NÃO ENCONTRADO</td>
+
+`
+
+}
+
+
+tbody.appendChild(tr)
+
+})
+
+
+
+let taxa=((conciliadas/vendas.length)*100).toFixed(2)
+
+document.getElementById("totalVendas").innerText=vendas.length
+document.getElementById("conciliadas").innerText=conciliadas
+document.getElementById("nao").innerText=nao
+document.getElementById("taxa").innerText=taxa+"%"
+
+}
+
+</script>
+
+
+</body>
+</html>
