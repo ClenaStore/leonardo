@@ -211,13 +211,14 @@ currency:"BRL"
 
 }
 
+// FUNÇÃO SEGURA PARA VALOR
 function parseValor(v){
 
 if(v === undefined || v === null || v === "") return null
 
-// número vindo do Excel
+// Excel já entrega número correto
 if(typeof v === "number"){
-return Number(v.toFixed(2))
+return Number(v)
 }
 
 let txt = String(v).trim()
@@ -234,7 +235,7 @@ let num = parseFloat(txt)
 
 if(isNaN(num)) return null
 
-return Number(num.toFixed(2))
+return num
 
 }
 
@@ -274,7 +275,7 @@ for(let i=1;i<dados.length;i++){
 
 let valor=parseValor(dados[i][coluna])
 
-if(valor){
+if(valor!==null){
 
 vendas.push({
 valor:valor,
@@ -301,7 +302,7 @@ linha.forEach(col=>{
 
 let v=parseValor(col)
 
-if(v){
+if(v!==null){
 
 pix.push({
 valor:v,
@@ -330,7 +331,7 @@ linha.forEach(col=>{
 
 let v=parseValor(col)
 
-if(v){
+if(v!==null){
 
 banco.push({
 valor:v,
