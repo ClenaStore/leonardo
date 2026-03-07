@@ -273,8 +273,10 @@ vendas=[]
 
 const header=dados[0]
 
-const coluna=header.findIndex(c=>String(c).toLowerCase().includes("liquido"))
-
+const coluna = header.findIndex(c=>{
+let nome = String(c).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+return nome.includes("valor liq")
+})
 for(let i=1;i<dados.length;i++){
 
 let valor=parseValor(dados[i][coluna])
