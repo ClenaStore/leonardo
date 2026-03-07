@@ -211,21 +211,26 @@ currency:"BRL"
 
 }
 
-// FUNÇÃO SEGURA PARA VALOR
 function parseValor(v){
 
 if(v === undefined || v === null || v === "") return null
 
-// Excel já entrega número correto
+// número vindo direto do Excel
 if(typeof v === "number"){
-return Number(v)
+
+// se for centavos tipo 400, 2551 etc
+if(Number.isInteger(v) && v > 100){
+return v / 100
+}
+
+return v
 }
 
 let txt = String(v).trim()
 
 txt = txt.replace("R$","").trim()
 
-// se for formato brasileiro
+// formato brasileiro
 if(txt.includes(",")){
 txt = txt.replace(/\./g,"")
 txt = txt.replace(",",".")
@@ -236,7 +241,6 @@ let num = parseFloat(txt)
 if(isNaN(num)) return null
 
 return num
-
 }
 
 function lerArquivo(file,callback){
