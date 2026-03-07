@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
 
 <meta charset="UTF-8">
@@ -13,7 +14,10 @@
 
 <style>
 
-*{box-sizing:border-box;font-family:Inter}
+*{
+box-sizing:border-box;
+font-family:Inter
+}
 
 body{
 margin:0;
@@ -90,12 +94,12 @@ text-align:left;
 }
 
 .ok{
-color:green;
+color:#16a34a;
 font-weight:700;
 }
 
 .erro{
-color:red;
+color:#dc2626;
 font-weight:700;
 }
 
@@ -138,17 +142,17 @@ Conciliador Financeiro
 
 <div class="indicador">
 Vendas
-<strong id="vendas">0</strong>
+<strong id="totalVendas">0</strong>
 </div>
 
 <div class="indicador">
 Conciliadas
-<strong id="ok">0</strong>
+<strong id="conciliadas">0</strong>
 </div>
 
 <div class="indicador">
 Não encontradas
-<strong id="erro">0</strong>
+<strong id="naoEncontradas">0</strong>
 </div>
 
 <div class="indicador">
@@ -164,9 +168,10 @@ Taxa
 
 <h2>Resultado da Conciliação</h2>
 
-<table id="tabela">
+<table id="resultado">
 
 <thead>
+
 <tr>
 <th>Valor Venda</th>
 <th>Valor Encontrado</th>
@@ -174,6 +179,7 @@ Taxa
 <th>Linha</th>
 <th>Status</th>
 </tr>
+
 </thead>
 
 <tbody></tbody>
@@ -184,12 +190,40 @@ Taxa
 
 </div>
 
-
 <script>
 
 let vendas=[]
 let pix=[]
 let banco=[]
+
+
+function normalizar(valor){
+
+if(valor===undefined || valor===null) return null
+
+let v=String(valor)
+.replace("R$","")
+.replace(/\./g,"")
+.replace(",",".")
+.trim()
+
+let num=parseFloat(v)
+
+if(isNaN(num)) return null
+
+return Number(num.toFixed(2))
+
+}
+
+
+function moeda(valor){
+
+return valor.toLocaleString('pt-BR',{
+style:'currency',
+currency:'BRL'
+})
+
+}
 
 
 function lerArquivo(file,callback){
@@ -227,12 +261,12 @@ const coluna=header.findIndex(c=>String(c).toLowerCase().includes("liquido"))
 
 for(let i=1;i<dados.length;i++){
 
-let valor=dados[i][coluna]
+let valor=normalizar(dados[i][coluna])
 
 if(valor){
 
 vendas.push({
-valor:Number(valor.toFixed(2)),
+valor:valor,
 linha:i+1
 })
 
@@ -256,10 +290,12 @@ dados.forEach((linha,i)=>{
 
 linha.forEach(col=>{
 
-if(typeof col==="number"){
+let valor=normalizar(col)
+
+if(valor){
 
 pix.push({
-valor:Number(col.toFixed(2)),
+valor:valor,
 linha:i+1
 })
 
@@ -285,10 +321,12 @@ dados.forEach((linha,i)=>{
 
 linha.forEach(col=>{
 
-if(typeof col==="number"){
+let valor=normalizar(col)
+
+if(valor){
 
 banco.push({
-valor:Number(col.toFixed(2)),
+valor:valor,
 linha:i+1
 })
 
@@ -304,13 +342,12 @@ linha:i+1
 
 
 
-
 function conciliar(){
 
 let conciliadas=0
 let nao=0
 
-const tbody=document.querySelector("#tabela tbody")
+let tbody=document.querySelector("#resultado tbody")
 tbody.innerHTML=""
 
 vendas.forEach(v=>{
@@ -320,7 +357,6 @@ let encontrado=null
 let achouPix=pix.find(p=>p.valor===v.valor)
 
 let achouBanco=banco.find(b=>b.valor===v.valor)
-
 
 if(achouPix){
 
@@ -350,8 +386,8 @@ if(encontrado){
 conciliadas++
 
 tr.innerHTML=`
-<td>R$ ${v.valor}</td>
-<td>R$ ${encontrado.valor}</td>
+<td>${moeda(v.valor)}</td>
+<td>${moeda(encontrado.valor)}</td>
 <td>${encontrado.arquivo}</td>
 <td>${encontrado.linha}</td>
 <td class="ok">OK</td>
@@ -364,7 +400,7 @@ else{
 nao++
 
 tr.innerHTML=`
-<td>R$ ${v.valor}</td>
+<td>${moeda(v.valor)}</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
@@ -377,12 +413,11 @@ tbody.appendChild(tr)
 
 })
 
-
 let taxa=((conciliadas/vendas.length)*100).toFixed(2)
 
-document.getElementById("vendas").innerText=vendas.length
-document.getElementById("ok").innerText=conciliadas
-document.getElementById("erro").innerText=nao
+document.getElementById("totalVendas").innerText=vendas.length
+document.getElementById("conciliadas").innerText=conciliadas
+document.getElementById("naoEncontradas").innerText=nao
 document.getElementById("taxa").innerText=taxa+"%"
 
 }
