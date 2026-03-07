@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Conciliador Financeiro</title>
+<title>Conciliador PIX</title>
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
@@ -16,7 +16,7 @@
 
 *{
 box-sizing:border-box;
-font-family:Inter
+font-family:Inter;
 }
 
 body{
@@ -43,7 +43,7 @@ background:white;
 padding:20px;
 border-radius:12px;
 margin-bottom:20px;
-box-shadow:0 10px 25px rgba(0,0,0,0.05);
+box-shadow:0 8px 20px rgba(0,0,0,0.05);
 }
 
 button{
@@ -115,7 +115,7 @@ font-weight:700;
 <body>
 
 <header>
-Conciliador PIX
+Conciliador Financeiro PIX
 </header>
 
 <div class="container">
@@ -213,18 +213,20 @@ currency:"BRL"
 
 function parseValor(v){
 
-if(v===undefined || v===null) return null
+if(v===undefined || v===null || v==="") return null
 
 if(typeof v==="number"){
 return Number(v.toFixed(2))
 }
 
-let txt=String(v)
+let txt=String(v).trim()
 
-txt=txt.replace("R$","")
+txt=txt.replace("R$","").trim()
+
+if(txt.includes(",")){
 txt=txt.replace(/\./g,"")
 txt=txt.replace(",",".")
-txt=txt.trim()
+}
 
 let num=parseFloat(txt)
 
@@ -358,9 +360,9 @@ totalPix+=v.valor
 
 let encontrado=null
 
-let p=pix.find(x=>x.valor===v.valor)
+let p=pix.find(x=>Math.abs(x.valor-v.valor)<0.01)
 
-let b=banco.find(x=>x.valor===v.valor)
+let b=banco.find(x=>Math.abs(x.valor-v.valor)<0.01)
 
 if(p){
 
