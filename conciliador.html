@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Conciliador PIX</title>
+<title>Conciliador Financeiro</title>
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
@@ -115,7 +115,7 @@ font-weight:700;
 <body>
 
 <header>
-Conciliador Financeiro PIX
+Conciliador PIX
 </header>
 
 <div class="container">
@@ -164,7 +164,7 @@ Conciliador Financeiro PIX
 </div>
 
 <div class="indicador">
-<span>Taxa de conciliação</span>
+<span>Taxa conciliação</span>
 <strong id="taxa">0%</strong>
 </div>
 
@@ -196,40 +196,43 @@ Conciliador Financeiro PIX
 
 </div>
 
-
 <script>
 
 let vendas=[]
 let pix=[]
 let banco=[]
 
-function moeda(valor){
+function moeda(v){
 
-return valor.toLocaleString("pt-BR",{
+return v.toLocaleString("pt-BR",{
 style:"currency",
 currency:"BRL"
 })
 
 }
 
-function normalizar(v){
+function parseValor(v){
 
-if(!v) return null
+if(v===undefined || v===null) return null
 
-let valor=String(v)
-.replace("R$","")
-.replace(/\./g,"")
-.replace(",",".")
-.trim()
+if(typeof v==="number"){
+return Number(v.toFixed(2))
+}
 
-let num=parseFloat(valor)
+let txt=String(v)
+
+txt=txt.replace("R$","")
+txt=txt.replace(/\./g,"")
+txt=txt.replace(",",".")
+txt=txt.trim()
+
+let num=parseFloat(txt)
 
 if(isNaN(num)) return null
 
 return Number(num.toFixed(2))
 
 }
-
 
 function lerArquivo(file,callback){
 
@@ -238,6 +241,7 @@ const reader=new FileReader()
 reader.onload=function(e){
 
 const data=new Uint8Array(e.target.result)
+
 const workbook=XLSX.read(data,{type:"array"})
 
 const sheet=workbook.Sheets[workbook.SheetNames[0]]
@@ -252,8 +256,6 @@ reader.readAsArrayBuffer(file)
 
 }
 
-
-
 document.getElementById("cupons").addEventListener("change",function(){
 
 lerArquivo(this.files[0],dados=>{
@@ -266,7 +268,7 @@ const coluna=header.findIndex(c=>String(c).toLowerCase().includes("liquido"))
 
 for(let i=1;i<dados.length;i++){
 
-let valor=normalizar(dados[i][coluna])
+let valor=parseValor(dados[i][coluna])
 
 if(valor){
 
@@ -283,8 +285,6 @@ linha:i+1
 
 })
 
-
-
 document.getElementById("pix").addEventListener("change",function(){
 
 lerArquivo(this.files[0],dados=>{
@@ -295,12 +295,12 @@ dados.forEach((linha,i)=>{
 
 linha.forEach(col=>{
 
-let valor=normalizar(col)
+let v=parseValor(col)
 
-if(valor){
+if(v){
 
 pix.push({
-valor:valor,
+valor:v,
 linha:i+1
 })
 
@@ -313,8 +313,6 @@ linha:i+1
 })
 
 })
-
-
 
 document.getElementById("banco").addEventListener("change",function(){
 
@@ -326,12 +324,12 @@ dados.forEach((linha,i)=>{
 
 linha.forEach(col=>{
 
-let valor=normalizar(col)
+let v=parseValor(col)
 
-if(valor){
+if(v){
 
 banco.push({
-valor:valor,
+valor:v,
 linha:i+1
 })
 
@@ -345,16 +343,14 @@ linha:i+1
 
 })
 
-
-
 function conciliar(){
-
-let tbody=document.getElementById("resultado")
-tbody.innerHTML=""
 
 let totalPix=0
 let totalBanco=0
 let conciliadas=0
+
+const tbody=document.getElementById("resultado")
+tbody.innerHTML=""
 
 vendas.forEach(v=>{
 
@@ -391,17 +387,14 @@ let tr=document.createElement("tr")
 if(encontrado){
 
 conciliadas++
-
 totalBanco+=encontrado.valor
 
 tr.innerHTML=`
-
 <td>${moeda(v.valor)}</td>
 <td>${moeda(encontrado.valor)}</td>
 <td>${encontrado.arquivo}</td>
 <td>${encontrado.linha}</td>
 <td class="ok">OK</td>
-
 `
 
 }
@@ -409,13 +402,11 @@ tr.innerHTML=`
 else{
 
 tr.innerHTML=`
-
 <td>${moeda(v.valor)}</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
 <td class="erro">NÃO ENCONTRADO</td>
-
 `
 
 }
@@ -423,7 +414,6 @@ tr.innerHTML=`
 tbody.appendChild(tr)
 
 })
-
 
 let taxa=((conciliadas/vendas.length)*100).toFixed(2)
 
@@ -437,5 +427,4 @@ document.getElementById("taxa").innerText=taxa+"%"
 </script>
 
 </body>
-
 </html>
