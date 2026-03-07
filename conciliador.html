@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
 
 <meta charset="UTF-8">
@@ -14,10 +13,7 @@
 
 <style>
 
-*{
-box-sizing:border-box;
-font-family:Inter;
-}
+*{box-sizing:border-box;font-family:Inter}
 
 body{
 margin:0;
@@ -46,24 +42,6 @@ margin-bottom:20px;
 box-shadow:0 4px 15px rgba(0,0,0,0.05);
 }
 
-h2{
-margin-top:0;
-}
-
-input{
-margin:10px 0;
-}
-
-button{
-background:#111827;
-color:white;
-padding:12px 20px;
-border:none;
-border-radius:8px;
-font-weight:700;
-cursor:pointer;
-}
-
 .grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
@@ -82,6 +60,16 @@ border-radius:10px;
 display:block;
 font-size:22px;
 margin-top:5px;
+}
+
+button{
+background:#111827;
+color:white;
+padding:12px 20px;
+border:none;
+border-radius:8px;
+font-weight:700;
+cursor:pointer;
 }
 
 table{
@@ -130,7 +118,7 @@ Conciliador Financeiro
 <label>Relatório de Cupons</label>
 <input type="file" id="cupons">
 
-<label>Relatório PIX Rede</label>
+<label>Relatório PIX</label>
 <input type="file" id="pix">
 
 <label>Extrato Bancário</label>
@@ -150,17 +138,17 @@ Conciliador Financeiro
 
 <div class="indicador">
 Vendas
-<strong id="totalVendas">0</strong>
+<strong id="vendas">0</strong>
 </div>
 
 <div class="indicador">
 Conciliadas
-<strong id="conciliadas">0</strong>
+<strong id="ok">0</strong>
 </div>
 
 <div class="indicador">
-Não Encontradas
-<strong id="nao">0</strong>
+Não encontradas
+<strong id="erro">0</strong>
 </div>
 
 <div class="indicador">
@@ -172,15 +160,13 @@ Taxa
 
 </div>
 
-
 <div class="card">
 
 <h2>Resultado da Conciliação</h2>
 
-<table id="resultado">
+<table id="tabela">
 
 <thead>
-
 <tr>
 <th>Valor Venda</th>
 <th>Valor Encontrado</th>
@@ -188,7 +174,6 @@ Taxa
 <th>Linha</th>
 <th>Status</th>
 </tr>
-
 </thead>
 
 <tbody></tbody>
@@ -206,6 +191,7 @@ let vendas=[]
 let pix=[]
 let banco=[]
 
+
 function lerArquivo(file,callback){
 
 const reader=new FileReader()
@@ -214,7 +200,9 @@ reader.onload=function(e){
 
 const data=new Uint8Array(e.target.result)
 const workbook=XLSX.read(data,{type:'array'})
+
 const sheet=workbook.Sheets[workbook.SheetNames[0]]
+
 const json=XLSX.utils.sheet_to_json(sheet,{header:1})
 
 callback(json)
@@ -233,22 +221,24 @@ lerArquivo(this.files[0],dados=>{
 
 vendas=[]
 
-dados.forEach((linha,i)=>{
+const header=dados[0]
 
-linha.forEach(col=>{
+const coluna=header.findIndex(c=>String(c).toLowerCase().includes("liquido"))
 
-if(typeof col==="number"){
+for(let i=1;i<dados.length;i++){
+
+let valor=dados[i][coluna]
+
+if(valor){
 
 vendas.push({
-valor:Number(col.toFixed(2)),
+valor:Number(valor.toFixed(2)),
 linha:i+1
 })
 
 }
 
-})
-
-})
+}
 
 })
 
@@ -320,7 +310,7 @@ function conciliar(){
 let conciliadas=0
 let nao=0
 
-let tbody=document.querySelector("#resultado tbody")
+const tbody=document.querySelector("#tabela tbody")
 tbody.innerHTML=""
 
 vendas.forEach(v=>{
@@ -353,7 +343,6 @@ linha:achouBanco.linha
 }
 
 
-
 let tr=document.createElement("tr")
 
 if(encontrado){
@@ -361,13 +350,11 @@ if(encontrado){
 conciliadas++
 
 tr.innerHTML=`
-
 <td>R$ ${v.valor}</td>
 <td>R$ ${encontrado.valor}</td>
 <td>${encontrado.arquivo}</td>
 <td>${encontrado.linha}</td>
 <td class="ok">OK</td>
-
 `
 
 }
@@ -377,35 +364,30 @@ else{
 nao++
 
 tr.innerHTML=`
-
 <td>R$ ${v.valor}</td>
 <td>-</td>
 <td>-</td>
 <td>-</td>
 <td class="erro">NÃO ENCONTRADO</td>
-
 `
 
 }
-
 
 tbody.appendChild(tr)
 
 })
 
 
-
 let taxa=((conciliadas/vendas.length)*100).toFixed(2)
 
-document.getElementById("totalVendas").innerText=vendas.length
-document.getElementById("conciliadas").innerText=conciliadas
-document.getElementById("nao").innerText=nao
+document.getElementById("vendas").innerText=vendas.length
+document.getElementById("ok").innerText=conciliadas
+document.getElementById("erro").innerText=nao
 document.getElementById("taxa").innerText=taxa+"%"
 
 }
 
 </script>
-
 
 </body>
 </html>
