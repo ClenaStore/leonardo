@@ -329,24 +329,32 @@ lerArquivo(this.files[0],dados=>{
 
 banco=[]
 
-dados.forEach((linha,i)=>{
+// localizar coluna valor
+const header = dados[0]
 
-linha.forEach(col=>{
+let colunaValor = header.findIndex(c =>
+String(c).toLowerCase().includes("valor")
+)
 
-let v=parseValor(col)
+if(colunaValor === -1){
+alert("Coluna VALOR não encontrada no extrato")
+return
+}
 
-if(v!==null){
+for(let i=1;i<dados.length;i++){
+
+let valor = parseValor(dados[i][colunaValor])
+
+if(valor !== null){
 
 banco.push({
-valor:v,
+valor:valor,
 linha:i+1
 })
 
 }
 
-})
-
-})
+}
 
 })
 
