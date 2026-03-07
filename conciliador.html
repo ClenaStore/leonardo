@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Conciliador PIX</title>
+<title>Conciliador PIX Profissional</title>
 
 <meta name="viewport" content="width=device-width,initial-scale=1">
 
@@ -107,6 +107,7 @@ border-bottom:1px solid #eee
 
 .ok{color:#16a34a;font-weight:700}
 .erro{color:#dc2626;font-weight:700}
+.warn{color:#f59e0b;font-weight:700}
 
 .modal{
 position:fixed;
@@ -125,9 +126,15 @@ z-index:999
 background:white;
 padding:30px;
 border-radius:12px;
-width:800px;
-max-height:80vh;
+width:900px;
+max-height:85vh;
 overflow:auto
+}
+
+.modal-title{
+font-size:20px;
+font-weight:800;
+margin-top:20px
 }
 
 </style>
@@ -174,7 +181,7 @@ Extrato Itaú<br>
 <strong id="totalItau">R$ 0</strong>
 </div>
 
-<div class="indicador" onclick="mostrarPendentes()">
+<div class="indicador" onclick="mostrarDiferencas()">
 <span>Diferença</span>
 <strong id="diferenca">R$ 0</strong>
 </div>
@@ -204,26 +211,31 @@ Extrato Itaú<br>
 
 </div>
 
-<div class="modal" id="modalPendentes">
+<div class="modal" id="modalDif">
 
 <div class="modal-box">
 
-<h2>Vendas pendentes de conciliação</h2>
+<h2>Diferenças de Conciliação</h2>
+
+<div class="modal-title">Vendas pendentes</div>
 
 <table>
+<tbody id="pendentes"></tbody>
+</table>
 
-<thead>
-<tr>
-<th>Valor</th>
-</tr>
-</thead>
+<div class="modal-title">Valores que sobraram na Rede</div>
 
-<tbody id="listaPendentes"></tbody>
+<table>
+<tbody id="sobrasRede"></tbody>
+</table>
 
+<div class="modal-title">Valores que sobraram no Itaú</div>
+
+<table>
+<tbody id="sobrasItau"></tbody>
 </table>
 
 <br>
-
 <button onclick="fecharModal()">Fechar</button>
 
 </div>
@@ -235,7 +247,10 @@ Extrato Itaú<br>
 let vendas=[]
 let pix=[]
 let banco=[]
+
 let pendentes=[]
+let sobrasRede=[]
+let sobrasItau=[]
 
 function moeda(v){
 return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
@@ -243,7 +258,7 @@ return v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"})
 
 function parseValor(v){
 
-if(v===undefined || v===null || v==="") return null
+if(v===undefined||v===null||v==="") return null
 
 if(typeof v==="number"){
 if(Number.isInteger(v)&&v>100){return v/100}
@@ -296,7 +311,6 @@ lerArquivo(this.files[0],dados=>{
 const header=dados[0]
 
 const colValor=header.findIndex(c=>String(c).toLowerCase().includes("valor liq"))
-
 const colSeq=header.findIndex(c=>String(c).toLowerCase().includes("sequ"))
 
 let mapa={}
@@ -306,7 +320,7 @@ for(let i=1;i<dados.length;i++){
 let seq=dados[i][colSeq]
 let valor=parseValor(dados[i][colValor])
 
-if(seq && valor!==null){
+if(seq&&valor!==null){
 
 if(!mapa[seq]) mapa[seq]={valor:0}
 
@@ -329,7 +343,6 @@ lerArquivo(this.files[0],dados=>{
 pix=[]
 
 const header=dados[0]
-
 const colValor=header.findIndex(c=>String(c).toLowerCase().includes("valor"))
 
 for(let i=1;i<dados.length;i++){
@@ -351,7 +364,6 @@ lerArquivo(this.files[0],dados=>{
 banco=[]
 
 const header=dados[0]
-
 const colValor=header.findIndex(c=>String(c).toLowerCase().includes("valor"))
 
 for(let i=1;i<dados.length;i++){
@@ -369,6 +381,8 @@ if(valor!==null) banco.push(valor)
 function conciliar(){
 
 pendentes=[]
+sobrasRede=[]
+sobrasItau=[]
 
 let totalVendas=0
 let totalRede=0
@@ -417,6 +431,18 @@ tbody.appendChild(tr)
 
 })
 
+pix.forEach(v=>{
+if(!vendas.find(x=>Math.abs(x.valor-v)<0.01)){
+sobrasRede.push(v)
+}
+})
+
+banco.forEach(v=>{
+if(!vendas.find(x=>Math.abs(x.valor-v)<0.01)){
+sobrasItau.push(v)
+}
+})
+
 document.getElementById("totalVendas").innerText=moeda(totalVendas)
 document.getElementById("totalRede").innerText=moeda(totalRede)
 document.getElementById("totalItau").innerText=moeda(totalItau)
@@ -424,21 +450,34 @@ document.getElementById("diferenca").innerText=moeda(totalVendas-(totalRede+tota
 
 }
 
-function mostrarPendentes(){
+function mostrarDiferencas(){
 
-const tbody=document.getElementById("listaPendentes")
-tbody.innerHTML=""
+let p=document.getElementById("pendentes")
+let r=document.getElementById("sobrasRede")
+let i=document.getElementById("sobrasItau")
+
+p.innerHTML=""
+r.innerHTML=""
+i.innerHTML=""
 
 pendentes.forEach(v=>{
-tbody.innerHTML+=`<tr><td>${moeda(v)}</td></tr>`
+p.innerHTML+=`<tr><td class="warn">${moeda(v)}</td></tr>`
 })
 
-document.getElementById("modalPendentes").style.display="flex"
+sobrasRede.forEach(v=>{
+r.innerHTML+=`<tr><td class="erro">${moeda(v)}</td></tr>`
+})
+
+sobrasItau.forEach(v=>{
+i.innerHTML+=`<tr><td class="erro">${moeda(v)}</td></tr>`
+})
+
+document.getElementById("modalDif").style.display="flex"
 
 }
 
 function fecharModal(){
-document.getElementById("modalPendentes").style.display="none"
+document.getElementById("modalDif").style.display="none"
 }
 
 async function gerarPDF(){
