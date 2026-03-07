@@ -277,20 +277,35 @@ const coluna = header.findIndex(c=>{
 let nome = String(c).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"")
 return nome.includes("valor liq")
 })
-for(let i=1;i<dados.length;i++){
 
-let valor=parseValor(dados[i][coluna])
-
-if(valor!==null){
-
-vendas.push({
-valor:valor,
-linha:i+1
+let colunaSeq = header.findIndex(c=>{
+let nome = String(c).toLowerCase()
+return nome.includes("sequ")
 })
 
+let mapa={}
+
+for(let i=1;i<dados.length;i++){
+
+let seq = dados[i][colunaSeq]
+let valor = parseValor(dados[i][coluna])
+
+if(seq && valor!==null){
+
+if(!mapa[seq]){
+mapa[seq]={
+valor:0,
+linha:i+1
+}
+}
+
+mapa[seq].valor += valor
+
 }
 
 }
+
+vendas = Object.values(mapa)
 
 })
 
