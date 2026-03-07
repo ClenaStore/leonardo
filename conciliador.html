@@ -213,22 +213,24 @@ currency:"BRL"
 
 function parseValor(v){
 
-if(v===undefined || v===null || v==="") return null
+if(v === undefined || v === null || v === "") return null
 
-if(typeof v==="number"){
+// número vindo do Excel
+if(typeof v === "number"){
 return Number(v.toFixed(2))
 }
 
-let txt=String(v).trim()
+let txt = String(v).trim()
 
-txt=txt.replace("R$","").trim()
+txt = txt.replace("R$","").trim()
 
+// se for formato brasileiro
 if(txt.includes(",")){
-txt=txt.replace(/\./g,"")
-txt=txt.replace(",",".")
+txt = txt.replace(/\./g,"")
+txt = txt.replace(",",".")
 }
 
-let num=parseFloat(txt)
+let num = parseFloat(txt)
 
 if(isNaN(num)) return null
 
