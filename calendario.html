@@ -67,21 +67,41 @@ font-weight:600;
 transition:.2s;
 }
 
-select:hover,button:hover{
-transform:translateY(-1px);
-box-shadow:var(--shadow);
-}
-
 button{
 background:var(--primary);
 color:#fff;
 }
 
-/* MÊS */
-#mesLabel{
-margin:10px 0 16px;
-font-weight:700;
-color:var(--muted);
+button:hover,select:hover{
+transform:translateY(-1px);
+box-shadow:var(--shadow);
+}
+
+/* GRID DOS CALENDÁRIOS */
+.calendars{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:16px;
+}
+
+@media(max-width:900px){
+.calendars{
+grid-template-columns:1fr;
+}
+}
+
+/* BLOCO */
+.calendar-box{
+background:var(--card);
+border-radius:20px;
+padding:16px;
+box-shadow:var(--shadow);
+}
+
+/* TÍTULO */
+.month-title{
+font-weight:800;
+margin-bottom:12px;
 }
 
 /* CALENDARIO */
@@ -100,22 +120,22 @@ font-weight:600;
 
 /* DIA */
 .day{
-background:var(--card);
+background:#fff;
 border:1px solid var(--border);
 border-radius:var(--radius);
 padding:10px;
-min-height:100px;
+min-height:95px;
 cursor:pointer;
 display:flex;
 flex-direction:column;
 justify-content:space-between;
 transition:.2s;
-box-shadow:var(--shadow);
 }
 
 .day:hover{
 transform:translateY(-3px);
 border-color:var(--primary);
+box-shadow:var(--shadow);
 }
 
 .today{
@@ -129,7 +149,7 @@ font-weight:600;
 }
 
 .day-value{
-font-size:15px;
+font-size:14px;
 font-weight:800;
 color:var(--green);
 }
@@ -185,16 +205,11 @@ margin-bottom:12px;
 .item{
 border-bottom:1px solid var(--border);
 padding:10px 0;
-font-size:14px;
-}
-
-.item strong{
-font-weight:700;
 }
 
 .empty{
-color:var(--muted);
 text-align:center;
+color:var(--muted);
 padding:20px;
 }
 
@@ -207,18 +222,25 @@ padding:20px;
 <h2>💰 Agenda de Recebimentos</h2>
 
 <div class="controls">
-<button onclick="mesAnterior()">←</button>
-<button onclick="proximoMes()">→</button>
-
 <select id="empresaFiltro" onchange="carregar()">
 <option value="">Todas Empresas</option>
 </select>
 </div>
 </div>
 
-<h3 id="mesLabel"></h3>
+<div class="calendars">
 
-<div id="calendar" class="calendar"></div>
+<div class="calendar-box">
+<div id="mesAtualLabel" class="month-title"></div>
+<div id="calendarAtual" class="calendar"></div>
+</div>
+
+<div class="calendar-box">
+<div id="mesProximoLabel" class="month-title"></div>
+<div id="calendarProximo" class="calendar"></div>
+</div>
+
+</div>
 
 <!-- MODAL -->
 <div class="modal" id="modal">
@@ -245,7 +267,6 @@ const sb = createClient(
 );
 
 let dados = [];
-let dataAtual = new Date();
 
 /* ===== FORMATAÇÃO ===== */
 function moeda(v){
@@ -271,7 +292,7 @@ async function carregar(){
   dados = data || [];
 
   montarFiltro();
-  montarCalendario();
+  montarCalendarios();
 }
 
 /* ===== FILTRO ===== */
@@ -288,17 +309,36 @@ function montarFiltro(){
     empresas.map(e=>`<option ${e===atual?"selected":""}>${e}</option>`).join("");
 }
 
-/* ===== CALENDARIO ===== */
-function montarCalendario(){
+/* ===== CALENDARIOS ===== */
+function montarCalendarios(){
 
-  const calendar = document.getElementById("calendar");
+  const hoje = new Date();
+
+  montarCalendario(
+    hoje.getFullYear(),
+    hoje.getMonth(),
+    "calendarAtual",
+    "mesAtualLabel"
+  );
+
+  montarCalendario(
+    hoje.getFullYear(),
+    hoje.getMonth()+1,
+    "calendarProximo",
+    "mesProximoLabel"
+  );
+}
+
+/* ===== MONTAR ===== */
+function montarCalendario(ano, mes, containerId, labelId){
+
+  const calendar = document.getElementById(containerId);
   calendar.innerHTML = "";
 
-  const ano = dataAtual.getFullYear();
-  const mes = dataAtual.getMonth();
+  const ref = new Date(ano, mes, 1);
 
-  document.getElementById("mesLabel").innerText =
-    dataAtual.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+  document.getElementById(labelId).innerText =
+    ref.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
 
   const primeiroDia = new Date(ano, mes, 1).getDay();
   const diasNoMes = new Date(ano, mes+1, 0).getDate();
@@ -307,7 +347,7 @@ function montarCalendario(){
 
   dados.forEach(d=>{
     const dt = new Date(d.data_recebimento);
-    if(dt.getMonth() !== mes) return;
+    if(dt.getMonth() !== mes || dt.getFullYear() !== ano) return;
 
     const dia = dt.getDate();
     mapa[dia] = (mapa[dia] || 0) + Number(d.valor);
@@ -334,21 +374,16 @@ function montarCalendario(){
       ano === hoje.getFullYear();
 
     calendar.innerHTML += `
-      <div class="day ${isHoje ? "today":""}" onclick="abrirDia(${i})">
+      <div class="day ${isHoje ? "today":""}" onclick="abrirDia(${ano},${mes},${i})">
         <div class="day-number">${i}</div>
-        <div class="day-value">
-          ${valor ? moeda(valor) : ""}
-        </div>
+        <div class="day-value">${valor ? moeda(valor) : ""}</div>
       </div>
     `;
   }
 }
 
 /* ===== MODAL ===== */
-function abrirDia(dia){
-
-  const ano = dataAtual.getFullYear();
-  const mes = dataAtual.getMonth();
+function abrirDia(ano, mes, dia){
 
   const dataISO = new Date(ano, mes, dia)
     .toISOString()
@@ -386,17 +421,6 @@ function abrirDia(dia){
 
 function fecharModal(){
   document.getElementById("modal").style.display = "none";
-}
-
-/* ===== MÊS ===== */
-function mesAnterior(){
-  dataAtual.setMonth(dataAtual.getMonth()-1);
-  montarCalendario();
-}
-
-function proximoMes(){
-  dataAtual.setMonth(dataAtual.getMonth()+1);
-  montarCalendario();
 }
 
 /* INIT */
