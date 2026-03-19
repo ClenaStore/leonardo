@@ -18,15 +18,10 @@
 --border:#e5e7eb;
 --text:#0f172a;
 --muted:#64748b;
-
 --primary:#2563eb;
 --green:#16a34a;
-
 --shadow:0 6px 20px rgba(0,0,0,.06);
---radius:18px;
 }
-
-*{box-sizing:border-box}
 
 body{
 margin:0;
@@ -41,43 +36,22 @@ padding:16px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-gap:10px;
+margin-bottom:16px;
 flex-wrap:wrap;
-margin-bottom:14px;
-}
-
-h2{
-margin:0;
-font-weight:800;
 }
 
 .controls{
 display:flex;
-gap:8px;
-flex-wrap:wrap;
+gap:10px;
 }
 
-select,button{
-padding:10px 14px;
-border-radius:12px;
+select{
+padding:10px;
+border-radius:10px;
 border:1px solid var(--border);
-background:#fff;
-cursor:pointer;
-font-weight:600;
-transition:.2s;
 }
 
-button{
-background:var(--primary);
-color:#fff;
-}
-
-button:hover,select:hover{
-transform:translateY(-1px);
-box-shadow:var(--shadow);
-}
-
-/* GRID DOS CALENDÁRIOS */
+/* GRID */
 .calendars{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -85,26 +59,18 @@ gap:16px;
 }
 
 @media(max-width:900px){
-.calendars{
-grid-template-columns:1fr;
-}
+.calendars{grid-template-columns:1fr}
 }
 
-/* BLOCO */
-.calendar-box{
-background:var(--card);
-border-radius:20px;
-padding:16px;
+/* BOX */
+.box{
+background:#fff;
+border-radius:18px;
+padding:14px;
 box-shadow:var(--shadow);
 }
 
-/* TÍTULO */
-.month-title{
-font-weight:800;
-margin-bottom:12px;
-}
-
-/* CALENDARIO */
+/* CALENDAR */
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
@@ -115,16 +81,13 @@ gap:10px;
 text-align:center;
 font-size:12px;
 color:var(--muted);
-font-weight:600;
 }
 
-/* DIA */
 .day{
-background:#fff;
 border:1px solid var(--border);
-border-radius:var(--radius);
+border-radius:14px;
 padding:10px;
-min-height:95px;
+min-height:90px;
 cursor:pointer;
 display:flex;
 flex-direction:column;
@@ -135,23 +98,11 @@ transition:.2s;
 .day:hover{
 transform:translateY(-3px);
 border-color:var(--primary);
-box-shadow:var(--shadow);
-}
-
-.today{
-border:2px solid var(--primary);
-}
-
-.day-number{
-font-size:12px;
-color:var(--muted);
-font-weight:600;
 }
 
 .day-value{
-font-size:14px;
-font-weight:800;
 color:var(--green);
+font-weight:800;
 }
 
 /* MODAL */
@@ -162,55 +113,21 @@ background:rgba(0,0,0,.6);
 display:none;
 align-items:center;
 justify-content:center;
-z-index:999;
-backdrop-filter:blur(6px);
 }
 
-.modal-content{
+.modal-box{
 background:#fff;
+padding:20px;
 border-radius:20px;
-padding:18px;
 width:95%;
-max-width:420px;
-max-height:85vh;
-overflow:auto;
-box-shadow:0 20px 60px rgba(0,0,0,.2);
-animation:fade .2s ease;
+max-width:400px;
 }
 
-@keyframes fade{
-from{opacity:0; transform:scale(.95)}
-to{opacity:1; transform:scale(1)}
-}
-
-.modal-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:10px;
-}
-
-.close{
-cursor:pointer;
-font-size:18px;
-}
-
-.total-dia{
+.total{
 font-size:20px;
 font-weight:800;
 color:var(--green);
-margin-bottom:12px;
-}
-
-.item{
-border-bottom:1px solid var(--border);
-padding:10px 0;
-}
-
-.empty{
-text-align:center;
-color:var(--muted);
-padding:20px;
+margin-bottom:10px;
 }
 
 </style>
@@ -230,30 +147,25 @@ padding:20px;
 
 <div class="calendars">
 
-<div class="calendar-box">
-<div id="mesAtualLabel" class="month-title"></div>
-<div id="calendarAtual" class="calendar"></div>
+<div class="box">
+<h3 id="mesAtual"></h3>
+<div id="calAtual" class="calendar"></div>
 </div>
 
-<div class="calendar-box">
-<div id="mesProximoLabel" class="month-title"></div>
-<div id="calendarProximo" class="calendar"></div>
+<div class="box">
+<h3 id="mesProximo"></h3>
+<div id="calProx" class="calendar"></div>
 </div>
 
 </div>
 
 <!-- MODAL -->
 <div class="modal" id="modal">
-<div class="modal-content">
-
-<div class="modal-header">
+<div class="modal-box">
 <h3 id="modalData"></h3>
-<span class="close" onclick="fecharModal()">✕</span>
-</div>
-
-<div id="modalTotal" class="total-dia"></div>
+<div id="modalTotal" class="total"></div>
 <div id="modalConteudo"></div>
-
+<button onclick="fecharModal()">Fechar</button>
 </div>
 </div>
 
@@ -268,12 +180,17 @@ const sb = createClient(
 
 let dados = [];
 
-/* ===== FORMATAÇÃO ===== */
+/* ===== FORMATAR DATA LOCAL ===== */
+function formatISO(date){
+  const d = new Date(date);
+  return d.getFullYear() + "-" +
+    String(d.getMonth()+1).padStart(2,"0") + "-" +
+    String(d.getDate()).padStart(2,"0");
+}
+
+/* ===== MOEDA ===== */
 function moeda(v){
-  return Number(v).toLocaleString("pt-BR",{
-    style:"currency",
-    currency:"BRL"
-  });
+  return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
 /* ===== CARREGAR ===== */
@@ -292,52 +209,52 @@ async function carregar(){
   dados = data || [];
 
   montarFiltro();
-  montarCalendarios();
+  montarTudo();
 }
 
 /* ===== FILTRO ===== */
 function montarFiltro(){
 
-  const empresas = [...new Set(dados.map(d=>d.empresa).filter(Boolean))];
-
   const select = document.getElementById("empresaFiltro");
 
   const atual = select.value;
+
+  const empresas = [...new Set(dados.map(d=>d.empresa).filter(Boolean))];
 
   select.innerHTML =
     `<option value="">Todas Empresas</option>` +
     empresas.map(e=>`<option ${e===atual?"selected":""}>${e}</option>`).join("");
 }
 
-/* ===== CALENDARIOS ===== */
-function montarCalendarios(){
+/* ===== MONTAR TUDO ===== */
+function montarTudo(){
 
   const hoje = new Date();
 
   montarCalendario(
     hoje.getFullYear(),
     hoje.getMonth(),
-    "calendarAtual",
-    "mesAtualLabel"
+    "calAtual",
+    "mesAtual"
   );
 
   montarCalendario(
     hoje.getFullYear(),
     hoje.getMonth()+1,
-    "calendarProximo",
-    "mesProximoLabel"
+    "calProx",
+    "mesProximo"
   );
 }
 
-/* ===== MONTAR ===== */
-function montarCalendario(ano, mes, containerId, labelId){
+/* ===== CALENDARIO ===== */
+function montarCalendario(ano, mes, el, label){
 
-  const calendar = document.getElementById(containerId);
-  calendar.innerHTML = "";
+  const container = document.getElementById(el);
+  container.innerHTML = "";
 
   const ref = new Date(ano, mes, 1);
 
-  document.getElementById(labelId).innerText =
+  document.getElementById(label).innerText =
     ref.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
 
   const primeiroDia = new Date(ano, mes, 1).getDay();
@@ -347,35 +264,30 @@ function montarCalendario(ano, mes, containerId, labelId){
 
   dados.forEach(d=>{
     const dt = new Date(d.data_recebimento);
-    if(dt.getMonth() !== mes || dt.getFullYear() !== ano) return;
+
+    if(dt.getFullYear() !== ano || dt.getMonth() !== mes) return;
 
     const dia = dt.getDate();
     mapa[dia] = (mapa[dia] || 0) + Number(d.valor);
   });
 
   const diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+
   diasSemana.forEach(d=>{
-    calendar.innerHTML += `<div class="weekday">${d}</div>`;
+    container.innerHTML += `<div class="weekday">${d}</div>`;
   });
 
   for(let i=0;i<primeiroDia;i++){
-    calendar.innerHTML += `<div></div>`;
+    container.innerHTML += `<div></div>`;
   }
-
-  const hoje = new Date();
 
   for(let i=1;i<=diasNoMes;i++){
 
     const valor = mapa[i] || 0;
 
-    const isHoje =
-      i === hoje.getDate() &&
-      mes === hoje.getMonth() &&
-      ano === hoje.getFullYear();
-
-    calendar.innerHTML += `
-      <div class="day ${isHoje ? "today":""}" onclick="abrirDia(${ano},${mes},${i})">
-        <div class="day-number">${i}</div>
+    container.innerHTML += `
+      <div class="day" onclick="abrirDia(${ano},${mes},${i})">
+        <div>${i}</div>
         <div class="day-value">${valor ? moeda(valor) : ""}</div>
       </div>
     `;
@@ -385,36 +297,30 @@ function montarCalendario(ano, mes, containerId, labelId){
 /* ===== MODAL ===== */
 function abrirDia(ano, mes, dia){
 
-  const dataISO = new Date(ano, mes, dia)
-    .toISOString()
-    .split("T")[0];
+  const dataISO = formatISO(new Date(ano,mes,dia));
 
-  const lista = dados.filter(d=>d.data_recebimento === dataISO);
-
-  let total = 0;
-  const agrupado = {};
-
-  lista.forEach(l=>{
-    const key = `${l.bandeira} - ${l.modalidade}`;
-    agrupado[key] = (agrupado[key] || 0) + Number(l.valor);
-    total += Number(l.valor);
+  const lista = dados.filter(d=>{
+    return formatISO(d.data_recebimento) === dataISO;
   });
 
+  let total = 0;
   let html = "";
 
-  Object.entries(agrupado).forEach(([k,v])=>{
+  lista.forEach(l=>{
+    total += Number(l.valor);
+
     html += `
-      <div class="item">
-        <strong>${k}</strong><br>
-        ${moeda(v)}
-      </div>
+      <div>
+        ${l.bandeira} - ${l.modalidade}<br>
+        ${moeda(l.valor)}
+      </div><br>
     `;
   });
 
   document.getElementById("modalData").innerText = dataISO;
   document.getElementById("modalTotal").innerText = moeda(total);
   document.getElementById("modalConteudo").innerHTML =
-    html || `<div class="empty">Sem recebimentos</div>`;
+    html || "Sem recebimentos";
 
   document.getElementById("modal").style.display = "flex";
 }
