@@ -44,26 +44,23 @@ button{
   font-size:13px;
   color:#cbd5f5;
 }
-.success{color:#22c55e}
-.error{color:#ef4444}
-
 .empresa{
   margin-top:12px;
   border-top:1px dashed #333;
   padding-top:10px;
 }
-
 .dia{
   margin-top:8px;
   padding:8px;
   background:#111;
   border-radius:10px;
 }
-
 .bandeira{
   margin-left:10px;
   font-size:12px;
 }
+.success{color:#22c55e}
+.error{color:#ef4444}
 </style>
 </head>
 
@@ -96,7 +93,27 @@ const sb = createClient(
   "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
 );
 
+
 let registros = [];
+
+/* ================= CORREÇÃO DATA ================= */
+
+function excelDateToISO(excelDate){
+
+  if(typeof excelDate === "number"){
+    const utc_days = Math.floor(excelDate - 25569);
+    const utc_value = utc_days * 86400;
+    const date = new Date(utc_value * 1000);
+    return date.toISOString().split("T")[0];
+  }
+
+  if(typeof excelDate === "string"){
+    const d = new Date(excelDate);
+    if(!isNaN(d)) return d.toISOString().split("T")[0];
+  }
+
+  return null;
+}
 
 /* ================= PROCESSAR ================= */
 
@@ -110,17 +127,15 @@ async function processar(){
   }
 
   registros = [];
-
   const preview = document.getElementById("preview");
   preview.innerHTML = "";
 
   for(const file of files){
     await lerArquivo(file, preview);
   }
-
 }
 
-/* ================= LER ARQUIVO ================= */
+/* ================= LER ================= */
 
 function lerArquivo(file, preview){
 
@@ -139,7 +154,9 @@ function lerArquivo(file, preview){
 
       rows.slice(2).forEach(l=>{
 
-        const data = l[0];
+        const dataRaw = l[0];
+        const dataISO = excelDateToISO(dataRaw);
+
         const empresa = l[1];
         const banco = l[4];
         const agencia = l[5];
@@ -149,9 +166,7 @@ function lerArquivo(file, preview){
         const valor = Number(l[13]);
         const status = l[14];
 
-        if(!data || !empresa || !valor) return;
-
-        const dataISO = new Date(data).toISOString().split("T")[0];
+        if(!dataISO || !empresa || !valor) return;
 
         registros.push({
           data_recebimento: dataISO,
@@ -168,25 +183,19 @@ function lerArquivo(file, preview){
         });
 
         const key = `${empresa}|${dataISO}|${bandeira}`;
-
         mapa[key] = (mapa[key] || 0) + valor;
 
       });
 
-      /* ORGANIZAR */
+      /* ORGANIZA */
       const estrutura = {};
 
       Object.entries(mapa).forEach(([k,v])=>{
 
         const [empresa,data,bandeira] = k.split("|");
 
-        if(!estrutura[empresa]){
-          estrutura[empresa] = {};
-        }
-
-        if(!estrutura[empresa][data]){
-          estrutura[empresa][data] = {};
-        }
+        if(!estrutura[empresa]) estrutura[empresa] = {};
+        if(!estrutura[empresa][data]) estrutura[empresa][data] = {};
 
         estrutura[empresa][data][bandeira] =
           (estrutura[empresa][data][bandeira] || 0) + v;
