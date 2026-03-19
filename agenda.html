@@ -46,6 +46,24 @@ button{
 }
 .success{color:#22c55e}
 .error{color:#ef4444}
+
+.empresa{
+  margin-top:12px;
+  border-top:1px dashed #333;
+  padding-top:10px;
+}
+
+.dia{
+  margin-top:8px;
+  padding:8px;
+  background:#111;
+  border-radius:10px;
+}
+
+.bandeira{
+  margin-left:10px;
+  font-size:12px;
+}
 </style>
 </head>
 
@@ -54,9 +72,9 @@ button{
 <div class="card">
   <h2>Importar Agenda de Recebimentos</h2>
 
-  <input type="file" id="file" accept=".xlsx"><br><br>
+  <input type="file" id="file" accept=".xlsx" multiple><br><br>
 
-  <button onclick="processar()">Processar</button>
+  <button onclick="processar()">Processar Arquivos</button>
 </div>
 
 <div class="card">
@@ -80,85 +98,138 @@ const sb = createClient(
 
 let registros = [];
 
-/* PROCESSAR EXCEL */
+/* ================= PROCESSAR ================= */
 
 async function processar(){
-  const file = document.getElementById("file").files[0];
 
-  if(!file){
-    alert("Selecione o arquivo");
+  const files = document.getElementById("file").files;
+
+  if(!files.length){
+    alert("Selecione arquivos");
     return;
   }
 
   registros = [];
 
-  const reader = new FileReader();
+  const preview = document.getElementById("preview");
+  preview.innerHTML = "";
 
-  reader.onload = e=>{
-    const wb = XLSX.read(e.target.result,{type:"binary"});
-    const ws = wb.Sheets["pagamentos futuros"];
+  for(const file of files){
+    await lerArquivo(file, preview);
+  }
 
-    const rows = XLSX.utils.sheet_to_json(ws,{header:1});
-
-    const preview = document.getElementById("preview");
-    preview.innerHTML = "";
-
-    const resumo = {};
-
-    rows.slice(2).forEach(l=>{
-
-      const data = l[0];
-      const empresa = l[1];
-      const banco = l[4];
-      const agencia = l[5];
-      const conta = l[6];
-      const bandeira = l[11];
-      const modalidade = l[12];
-      const valor = Number(l[13]);
-      const status = l[14];
-
-      if(!data || !empresa || !valor) return;
-
-      const dataISO = new Date(data).toISOString().split("T")[0];
-
-      registros.push({
-        data_recebimento: dataISO,
-        empresa: empresa.toUpperCase(),
-        bandeira,
-        modalidade,
-        valor,
-        status,
-        banco,
-        agencia,
-        conta,
-        origem: "IMPORTACAO_EXCEL",
-        arquivo_origem: file.name
-      });
-
-      /* RESUMO POR EMPRESA */
-      if(!resumo[empresa]){
-        resumo[empresa] = 0;
-      }
-      resumo[empresa] += valor;
-
-    });
-
-    /* PREVIEW */
-    Object.entries(resumo).forEach(([emp,total])=>{
-      preview.innerHTML += `
-        <div style="margin-bottom:10px">
-          <strong style="color:#d4af37">${emp}</strong><br>
-          Total: R$ ${total.toFixed(2)}
-        </div>
-      `;
-    });
-
-  };
-
-  reader.readAsBinaryString(file);
 }
 
-/* SALVAR */
+/* ================= LER ARQUIVO ================= */
+
+function lerArquivo(file, preview){
+
+  return new Promise(resolve=>{
+
+    const reader = new FileReader();
+
+    reader.onload = e=>{
+
+      const wb = XLSX.read(e.target.result,{type:"binary"});
+      const ws = wb.Sheets["pagamentos futuros"];
+
+      const rows = XLSX.utils.sheet_to_json(ws,{header:1});
+
+      const mapa = {};
+
+      rows.slice(2).forEach(l=>{
+
+        const data = l[0];
+        const empresa = l[1];
+        const banco = l[4];
+        const agencia = l[5];
+        const conta = l[6];
+        const bandeira = l[11] || "OUTROS";
+        const modalidade = l[12];
+        const valor = Number(l[13]);
+        const status = l[14];
+
+        if(!data || !empresa || !valor) return;
+
+        const dataISO = new Date(data).toISOString().split("T")[0];
+
+        registros.push({
+          data_recebimento: dataISO,
+          empresa: empresa.toUpperCase(),
+          bandeira,
+          modalidade,
+          valor,
+          status,
+          banco,
+          agencia,
+          conta,
+          origem: "IMPORTACAO_EXCEL",
+          arquivo_origem: file.name
+        });
+
+        const key = `${empresa}|${dataISO}|${bandeira}`;
+
+        mapa[key] = (mapa[key] || 0) + valor;
+
+      });
+
+      /* ORGANIZAR */
+      const estrutura = {};
+
+      Object.entries(mapa).forEach(([k,v])=>{
+
+        const [empresa,data,bandeira] = k.split("|");
+
+        if(!estrutura[empresa]){
+          estrutura[empresa] = {};
+        }
+
+        if(!estrutura[empresa][data]){
+          estrutura[empresa][data] = {};
+        }
+
+        estrutura[empresa][data][bandeira] =
+          (estrutura[empresa][data][bandeira] || 0) + v;
+
+      });
+
+      /* PREVIEW */
+      preview.innerHTML += `
+        <div style="margin-bottom:16px">
+          <strong>${file.name}</strong>
+
+          ${Object.entries(estrutura).map(([empresa,dias])=>`
+            <div class="empresa">
+              <strong style="color:#d4af37">${empresa}</strong>
+
+              ${Object.entries(dias).map(([data,bands])=>`
+                <div class="dia">
+                  <strong>${data}</strong>
+
+                  ${Object.entries(bands).map(([b,v])=>`
+                    <div class="bandeira">
+                      • ${b}: R$ ${v.toFixed(2)}
+                    </div>
+                  `).join("")}
+
+                </div>
+              `).join("")}
+
+            </div>
+          `).join("")}
+
+        </div>
+      `;
+
+      resolve();
+    };
+
+    reader.readAsBinaryString(file);
+
+  });
+}
+
+/* ================= SALVAR ================= */
 
 async function salvar(){
 
