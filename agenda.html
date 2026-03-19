@@ -247,15 +247,22 @@ async function salvar(){
     return;
   }
 
-await sb
-  .from("agenda_recebimentos")
-  .upsert(registros, {
-    onConflict: 'data_recebimento,empresa,bandeira,modalidade'
-  });
+  registros = registros.map(r => ({
+    ...r,
+    empresa: r.empresa?.trim().toUpperCase(),
+    bandeira: r.bandeira?.trim().toUpperCase(),
+    modalidade: r.modalidade?.trim().toUpperCase()
+  }));
+
+  const { error } = await sb
+    .from("agenda_recebimentos")
+    .upsert(registros, {
+      onConflict: 'data_recebimento,empresa,bandeira,modalidade'
+    });
 
   document.getElementById("msg").innerHTML = error
-    ? `<div class="error">Erro ao salvar</div>`
-    : `<div class="success">Importado com sucesso</div>`;
+    ? `<div class="error">Erro: ${error.message}</div>`
+    : `<div class="success">Importado com sucesso (sem duplicar)</div>`;
 }
 
 </script>
