@@ -4,7 +4,6 @@
 
 <meta charset="UTF-8">
 <title>Agenda Financeira • Mercatto</title>
-
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -18,12 +17,9 @@
 --border:#e5e7eb;
 --text:#0f172a;
 --muted:#64748b;
-
 --green:#16a34a;
 --blue:#2563eb;
-
 --shadow:0 12px 40px rgba(0,0,0,.06);
---radius:18px;
 }
 
 body{
@@ -31,7 +27,6 @@ margin:0;
 font-family:Inter;
 background:var(--bg);
 padding:20px;
-color:var(--text);
 }
 
 /* HEADER */
@@ -39,16 +34,16 @@ color:var(--text);
 display:flex;
 justify-content:space-between;
 align-items:center;
+margin-bottom:20px;
 flex-wrap:wrap;
-margin-bottom:24px;
 }
 
 /* RESUMO */
 .resumo{
 display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:18px;
-margin-bottom:24px;
+gap:16px;
+margin-bottom:20px;
 }
 
 @media(max-width:900px){
@@ -56,29 +51,18 @@ margin-bottom:24px;
 }
 
 .card{
-background:var(--card);
-padding:20px;
-border-radius:20px;
+background:#fff;
+padding:18px;
+border-radius:18px;
 box-shadow:var(--shadow);
-transition:.2s;
-}
-
-.card:hover{
-transform:translateY(-3px);
-}
-
-.card small{
-color:var(--muted);
-font-weight:500;
 }
 
 .card h2{
-margin:8px 0 0;
 color:var(--green);
-font-size:22px;
+margin:5px 0;
 }
 
-/* FILTRO */
+/* SELECT */
 select{
 padding:12px;
 border-radius:12px;
@@ -86,11 +70,11 @@ border:1px solid var(--border);
 font-weight:600;
 }
 
-/* CALENDÁRIOS */
+/* CALENDARIOS */
 .calendars{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:18px;
+gap:16px;
 }
 
 @media(max-width:900px){
@@ -98,60 +82,48 @@ gap:18px;
 }
 
 .box{
-background:var(--card);
+background:#fff;
 padding:16px;
-border-radius:20px;
+border-radius:18px;
 box-shadow:var(--shadow);
 }
 
-/* TITULO */
-.month-title{
-font-weight:800;
-margin-bottom:12px;
-}
-
-/* CALENDARIO */
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
-gap:10px;
+gap:8px;
 }
 
 .weekday{
 font-size:12px;
 text-align:center;
 color:var(--muted);
-font-weight:600;
 }
 
-/* DIA */
 .day{
 border:1px solid var(--border);
-border-radius:14px;
+border-radius:12px;
 padding:10px;
-min-height:95px;
+min-height:90px;
 cursor:pointer;
 display:flex;
 flex-direction:column;
 justify-content:space-between;
 transition:.2s;
-background:#fff;
 }
 
 .day:hover{
 border-color:var(--blue);
-transform:translateY(-3px);
+transform:translateY(-2px);
 }
 
-.day-number{
-font-size:12px;
-color:var(--muted);
+.today{
+border:2px solid var(--blue);
 }
 
 .day-value{
-font-size:14px;
-font-weight:800;
 color:var(--green);
+font-weight:800;
 }
 
 /* MODAL */
@@ -162,51 +134,34 @@ background:rgba(0,0,0,.6);
 display:none;
 align-items:center;
 justify-content:center;
-backdrop-filter:blur(6px);
 }
 
 .modal-box{
 background:#fff;
 padding:20px;
-border-radius:22px;
+border-radius:18px;
 width:95%;
 max-width:420px;
-box-shadow:0 25px 70px rgba(0,0,0,.25);
-animation:fade .2s ease;
-}
-
-@keyframes fade{
-from{opacity:0; transform:scale(.95)}
-to{opacity:1; transform:scale(1)}
-}
-
-.modal-header{
-display:flex;
-justify-content:space-between;
-align-items:center;
-margin-bottom:10px;
+max-height:80vh;
+overflow:auto;
 }
 
 .total{
-font-size:22px;
+font-size:20px;
 font-weight:800;
 color:var(--green);
-margin-bottom:12px;
+margin-bottom:10px;
 }
 
-.item{
-padding:10px 0;
-border-bottom:1px solid var(--border);
-}
-
-.empty{
-text-align:center;
-color:var(--muted);
-padding:20px;
-}
-
-.close{
-cursor:pointer;
+/* LOADER */
+.loader{
+position:fixed;
+inset:0;
+background:rgba(255,255,255,.8);
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:700;
 }
 
 </style>
@@ -214,61 +169,40 @@ cursor:pointer;
 
 <body>
 
+<div class="loader" id="loader">Carregando...</div>
+
 <div class="header">
 <h2>💰 Agenda Financeira</h2>
 
-<select id="empresaFiltro" onchange="carregar()">
+<select id="empresaFiltro" onchange="aplicarFiltro()">
 <option value="">Todas Empresas</option>
 </select>
 </div>
 
-<!-- RESUMO -->
 <div class="resumo">
-
-<div class="card">
-<small>Hoje</small>
-<h2 id="resHoje"></h2>
+<div class="card"><small>Hoje</small><h2 id="resHoje"></h2></div>
+<div class="card"><small>Mês Atual</small><h2 id="resMes"></h2></div>
+<div class="card"><small>Total Geral</small><h2 id="resTotal"></h2></div>
 </div>
 
-<div class="card">
-<small>Mês Atual</small>
-<h2 id="resMes"></h2>
-</div>
-
-<div class="card">
-<small>Total Geral</small>
-<h2 id="resTotal"></h2>
-</div>
-
-</div>
-
-<!-- CALENDÁRIOS -->
 <div class="calendars">
-
 <div class="box">
-<div id="mesAtual" class="month-title"></div>
+<h3 id="mesAtual"></h3>
 <div id="calAtual" class="calendar"></div>
 </div>
 
 <div class="box">
-<div id="mesProx" class="month-title"></div>
+<h3 id="mesProx"></h3>
 <div id="calProx" class="calendar"></div>
 </div>
-
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="modal">
 <div class="modal-box">
-
-<div class="modal-header">
 <h3 id="modalData"></h3>
-<span class="close" onclick="fecharModal()">✕</span>
-</div>
-
 <div id="modalTotal" class="total"></div>
 <div id="modalConteudo"></div>
-
+<button onclick="fecharModal()">Fechar</button>
 </div>
 </div>
 
@@ -282,43 +216,37 @@ const sb = createClient(
 );
 
 let dados = [];
+let dadosFiltrados = [];
 
-/* ===== DATA ===== */
+/* DATA */
 function getParts(dateStr){
-  const [ano,mes,dia] = dateStr.split("-");
-  return { ano:+ano, mes:+mes-1, dia:+dia };
+  const [a,m,d] = dateStr.split("-");
+  return {ano:+a, mes:+m-1, dia:+d};
 }
 
 function formatBR(dateStr){
-  const [ano,mes,dia] = dateStr.split("-");
-  return `${dia}/${mes}/${ano}`;
+  const [a,m,d] = dateStr.split("-");
+  return `${d}/${m}/${a}`;
 }
 
 function moeda(v){
   return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
-/* ===== CARREGAR ===== */
+/* CARREGAR */
 async function carregar(){
 
-  const empresa = document.getElementById("empresaFiltro").value;
-
-  let query = sb.from("agenda_recebimentos").select("*");
-
-  if(empresa){
-    query = query.eq("empresa",empresa);
-  }
-
-  const { data } = await query;
+  const { data } = await sb.from("agenda_recebimentos").select("*");
 
   dados = data || [];
 
   montarFiltro();
-  montarResumo();
-  montarCalendarios();
+  aplicarFiltro();
+
+  loader.style.display = "none";
 }
 
-/* ===== FILTRO ===== */
+/* FILTRO */
 function montarFiltro(){
 
   const select = document.getElementById("empresaFiltro");
@@ -331,7 +259,19 @@ function montarFiltro(){
     empresas.map(e=>`<option ${e===atual?"selected":""}>${e}</option>`).join("");
 }
 
-/* ===== RESUMO ===== */
+function aplicarFiltro(){
+
+  const empresa = empresaFiltro.value;
+
+  dadosFiltrados = empresa
+    ? dados.filter(d=>d.empresa === empresa)
+    : [...dados];
+
+  montarResumo();
+  montarCalendarios();
+}
+
+/* RESUMO */
 function montarResumo(){
 
   const hoje = new Date();
@@ -341,7 +281,7 @@ function montarResumo(){
   let mesTotal = 0;
   let total = 0;
 
-  dados.forEach(d=>{
+  dadosFiltrados.forEach(d=>{
     const p = getParts(d.data_recebimento);
 
     total += Number(d.valor);
@@ -360,7 +300,7 @@ function montarResumo(){
   resTotal.innerText = moeda(total);
 }
 
-/* ===== CALENDÁRIOS ===== */
+/* CALENDARIOS */
 function montarCalendarios(){
 
   const hoje = new Date();
@@ -369,7 +309,6 @@ function montarCalendarios(){
   montarCalendario(hoje.getFullYear(), hoje.getMonth()+1, "calProx", "mesProx");
 }
 
-/* ===== CALENDARIO ===== */
 function montarCalendario(ano, mes, el, label){
 
   const container = document.getElementById(el);
@@ -385,13 +324,13 @@ function montarCalendario(ano, mes, el, label){
 
   const mapa = {};
 
-  dados.forEach(d=>{
+  dadosFiltrados.forEach(d=>{
     const p = getParts(d.data_recebimento);
-
     if(p.ano !== ano || p.mes !== mes) return;
-
     mapa[p.dia] = (mapa[p.dia] || 0) + Number(d.valor);
   });
+
+  const hoje = new Date();
 
   const diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
 
@@ -407,19 +346,24 @@ function montarCalendario(ano, mes, el, label){
 
     const valor = mapa[i] || 0;
 
+    const isHoje =
+      i === hoje.getDate() &&
+      mes === hoje.getMonth() &&
+      ano === hoje.getFullYear();
+
     container.innerHTML += `
-      <div class="day" onclick="abrirDia('${ano}-${String(mes+1).padStart(2,'0')}-${String(i).padStart(2,'0')}')">
-        <div class="day-number">${i}</div>
+      <div class="day ${isHoje?'today':''}" onclick="abrirDia('${ano}-${String(mes+1).padStart(2,'0')}-${String(i).padStart(2,'0')}')">
+        <div>${i}</div>
         <div class="day-value">${valor ? moeda(valor) : ""}</div>
       </div>
     `;
   }
 }
 
-/* ===== MODAL ===== */
+/* MODAL */
 function abrirDia(dataISO){
 
-  const lista = dados.filter(d=> d.data_recebimento === dataISO);
+  const lista = dadosFiltrados.filter(d=> d.data_recebimento === dataISO);
 
   let total = 0;
   let html = "";
@@ -428,16 +372,16 @@ function abrirDia(dataISO){
     total += Number(l.valor);
 
     html += `
-      <div class="item">
+      <div>
         <strong>${l.bandeira}</strong> - ${l.modalidade}<br>
         ${moeda(l.valor)}
-      </div>
+      </div><br>
     `;
   });
 
   modalData.innerText = formatBR(dataISO);
   modalTotal.innerText = moeda(total);
-  modalConteudo.innerHTML = html || `<div class="empty">Sem recebimentos</div>`;
+  modalConteudo.innerHTML = html || "Sem recebimentos";
 
   modal.style.display = "flex";
 }
