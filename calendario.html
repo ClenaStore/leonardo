@@ -1,87 +1,183 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
+
 <meta charset="UTF-8">
-<title>Importar Agenda de Recebimentos</title>
+<title>Agenda de Recebimentos • Mercatto</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
+:root{
+--bg:#0b0b0b;
+--card:#151515;
+--border:#242424;
+--text:#ffffff;
+--muted:#9ca3af;
+--gold:#d4af37;
+--green:#22c55e;
+}
+
+*{box-sizing:border-box}
+
 body{
-  margin:0;
-  padding:20px;
-  background:#0b0b0b;
-  color:#fff;
-  font-family:Inter
+margin:0;
+font-family:Inter;
+background:var(--bg);
+color:var(--text);
+padding:16px;
 }
-.card{
-  background:#151515;
-  border:1px solid #242424;
-  border-radius:18px;
-  padding:16px;
-  margin-bottom:16px
+
+/* HEADER */
+.header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:16px;
+gap:10px;
+flex-wrap:wrap;
 }
-input,button{
-  width:100%;
-  padding:12px;
-  border-radius:12px;
-  border:1px solid #242424;
-  background:#0b0b0b;
-  color:#fff
+
+.controls{
+display:flex;
+gap:8px;
+flex-wrap:wrap;
 }
+
+select,button{
+padding:10px;
+border-radius:10px;
+border:1px solid var(--border);
+background:var(--card);
+color:#fff;
+cursor:pointer;
+}
+
 button{
-  background:#d4af37;
-  color:#000;
-  font-weight:800;
-  cursor:pointer
+background:var(--gold);
+color:#000;
+font-weight:700;
 }
-.preview{
-  font-size:13px;
-  color:#cbd5f5;
+
+/* CALENDARIO */
+.calendar{
+display:grid;
+grid-template-columns:repeat(7,1fr);
+gap:8px;
 }
-.empresa{
-  margin-top:12px;
-  border-top:1px dashed #333;
-  padding-top:10px;
+
+.weekday{
+text-align:center;
+font-size:12px;
+color:var(--muted);
 }
-.dia{
-  margin-top:8px;
-  padding:8px;
-  background:#111;
-  border-radius:10px;
+
+.day{
+background:var(--card);
+border:1px solid var(--border);
+border-radius:14px;
+padding:8px;
+min-height:95px;
+cursor:pointer;
+transition:.2s;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
 }
-.bandeira{
-  margin-left:10px;
-  font-size:12px;
+
+.day:hover{
+transform:scale(1.05);
+border-color:var(--gold);
 }
-.success{color:#22c55e}
-.error{color:#ef4444}
+
+.today{
+border:1px solid var(--green);
+}
+
+.day-number{
+font-size:12px;
+color:var(--muted);
+}
+
+.day-value{
+font-size:14px;
+font-weight:800;
+color:var(--gold);
+}
+
+/* MODAL */
+.modal{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.85);
+display:none;
+align-items:center;
+justify-content:center;
+z-index:999;
+}
+
+.modal-content{
+background:var(--card);
+padding:16px;
+border-radius:18px;
+width:95%;
+max-width:420px;
+max-height:80vh;
+overflow:auto;
+}
+
+.item{
+border-bottom:1px solid #333;
+padding:8px 0;
+}
+
+.total-dia{
+font-size:18px;
+font-weight:800;
+color:var(--gold);
+margin-bottom:10px;
+}
+
+.close{
+cursor:pointer;
+float:right;
+font-size:18px;
+}
+
 </style>
 </head>
 
 <body>
 
-<div class="card">
-  <h2>Importar Agenda de Recebimentos</h2>
+<div class="header">
+<h2>Agenda de Recebimentos</h2>
 
-  <input type="file" id="file" accept=".xlsx" multiple><br><br>
+<div class="controls">
+<button onclick="mesAnterior()">←</button>
+<button onclick="proximoMes()">→</button>
 
-  <button onclick="processar()">Processar Arquivos</button>
+<select id="empresaFiltro" onchange="carregar()">
+<option value="">Todas Empresas</option>
+</select>
+</div>
 </div>
 
-<div class="card">
-  <h3>Pré-visualização</h3>
-  <div id="preview">Nenhum dado</div>
-</div>
+<h3 id="mesLabel"></h3>
 
-<div class="card">
-  <button onclick="salvar()">Salvar no Supabase</button>
-  <div id="msg"></div>
+<div id="calendar" class="calendar"></div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+<div class="modal-content">
+<span class="close" onclick="fecharModal()">✕</span>
+<h3 id="modalData"></h3>
+<div id="modalTotal" class="total-dia"></div>
+<div id="modalConteudo"></div>
+</div>
 </div>
 
 <script>
@@ -94,167 +190,162 @@ const sb = createClient(
 );
 
 
-let registros = [];
+let dados = [];
 
-/* ================= CORREÇÃO DATA ================= */
+let dataAtual = new Date();
 
-function excelDateToISO(excelDate){
-
-  if(typeof excelDate === "number"){
-    const utc_days = Math.floor(excelDate - 25569);
-    const utc_value = utc_days * 86400;
-    const date = new Date(utc_value * 1000);
-    return date.toISOString().split("T")[0];
-  }
-
-  if(typeof excelDate === "string"){
-    const d = new Date(excelDate);
-    if(!isNaN(d)) return d.toISOString().split("T")[0];
-  }
-
-  return null;
-}
-
-/* ================= PROCESSAR ================= */
-
-async function processar(){
-
-  const files = document.getElementById("file").files;
-
-  if(!files.length){
-    alert("Selecione arquivos");
-    return;
-  }
-
-  registros = [];
-  const preview = document.getElementById("preview");
-  preview.innerHTML = "";
-
-  for(const file of files){
-    await lerArquivo(file, preview);
-  }
-}
-
-/* ================= LER ================= */
-
-function lerArquivo(file, preview){
-
-  return new Promise(resolve=>{
-
-    const reader = new FileReader();
-
-    reader.onload = e=>{
-
-      const wb = XLSX.read(e.target.result,{type:"binary"});
-      const ws = wb.Sheets["pagamentos futuros"];
-
-      const rows = XLSX.utils.sheet_to_json(ws,{header:1});
-
-      const mapa = {};
-
-      rows.slice(2).forEach(l=>{
-
-        const dataRaw = l[0];
-        const dataISO = excelDateToISO(dataRaw);
-
-        const empresa = l[1];
-        const banco = l[4];
-        const agencia = l[5];
-        const conta = l[6];
-        const bandeira = l[11] || "OUTROS";
-        const modalidade = l[12];
-        const valor = Number(l[13]);
-        const status = l[14];
-
-        if(!dataISO || !empresa || !valor) return;
-
-        registros.push({
-          data_recebimento: dataISO,
-          empresa: empresa.toUpperCase(),
-          bandeira,
-          modalidade,
-          valor,
-          status,
-          banco,
-          agencia,
-          conta,
-          origem: "IMPORTACAO_EXCEL",
-          arquivo_origem: file.name
-        });
-
-        const key = `${empresa}|${dataISO}|${bandeira}`;
-        mapa[key] = (mapa[key] || 0) + valor;
-
-      });
-
-      /* ORGANIZA */
-      const estrutura = {};
-
-      Object.entries(mapa).forEach(([k,v])=>{
-
-        const [empresa,data,bandeira] = k.split("|");
-
-        if(!estrutura[empresa]) estrutura[empresa] = {};
-        if(!estrutura[empresa][data]) estrutura[empresa][data] = {};
-
-        estrutura[empresa][data][bandeira] =
-          (estrutura[empresa][data][bandeira] || 0) + v;
-
-      });
-
-      /* PREVIEW */
-      preview.innerHTML += `
-        <div style="margin-bottom:16px">
-          <strong>${file.name}</strong>
-
-          ${Object.entries(estrutura).map(([empresa,dias])=>`
-            <div class="empresa">
-              <strong style="color:#d4af37">${empresa}</strong>
-
-              ${Object.entries(dias).map(([data,bands])=>`
-                <div class="dia">
-                  <strong>${data}</strong>
-
-                  ${Object.entries(bands).map(([b,v])=>`
-                    <div class="bandeira">
-                      • ${b}: R$ ${v.toFixed(2)}
-                    </div>
-                  `).join("")}
-
-                </div>
-              `).join("")}
-
-            </div>
-          `).join("")}
-
-        </div>
-      `;
-
-      resolve();
-    };
-
-    reader.readAsBinaryString(file);
-
+/* ===== FORMATAÇÃO BRL ===== */
+function moeda(v){
+  return Number(v).toLocaleString("pt-BR",{
+    style:"currency",
+    currency:"BRL"
   });
 }
 
-/* ================= SALVAR ================= */
+/* ===== CARREGAR ===== */
+async function carregar(){
 
-async function salvar(){
+  const empresa = document.getElementById("empresaFiltro").value;
 
-  if(!registros.length){
-    alert("Nada para salvar");
-    return;
+  let query = sb.from("agenda_recebimentos").select("*");
+
+  if(empresa){
+    query = query.eq("empresa",empresa);
   }
 
-  const { error } = await sb
-    .from("agenda_recebimentos")
-    .insert(registros);
+  const { data } = await query;
 
-  document.getElementById("msg").innerHTML = error
-    ? `<div class="error">Erro ao salvar</div>`
-    : `<div class="success">Importado com sucesso</div>`;
+  dados = data || [];
+
+  montarFiltro();
+  montarCalendario();
 }
+
+/* ===== FILTRO ===== */
+function montarFiltro(){
+  const empresas = [...new Set(dados.map(d=>d.empresa))];
+
+  const select = document.getElementById("empresaFiltro");
+
+  select.innerHTML =
+    `<option value="">Todas Empresas</option>` +
+    empresas.map(e=>`<option>${e}</option>`).join("");
+}
+
+/* ===== CALENDÁRIO ===== */
+function montarCalendario(){
+
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+
+  const ano = dataAtual.getFullYear();
+  const mes = dataAtual.getMonth();
+
+  document.getElementById("mesLabel").innerText =
+    dataAtual.toLocaleDateString("pt-BR",{month:"long",year:"numeric"});
+
+  const primeiroDia = new Date(ano, mes, 1).getDay();
+  const diasNoMes = new Date(ano, mes+1, 0).getDate();
+
+  const mapa = {};
+
+  dados.forEach(d=>{
+    const dt = new Date(d.data_recebimento);
+    if(dt.getMonth() !== mes) return;
+
+    const dia = dt.getDate();
+    mapa[dia] = (mapa[dia] || 0) + Number(d.valor);
+  });
+
+  const diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
+  diasSemana.forEach(d=>{
+    calendar.innerHTML += `<div class="weekday">${d}</div>`;
+  });
+
+  for(let i=0;i<primeiroDia;i++){
+    calendar.innerHTML += `<div></div>`;
+  }
+
+  const hoje = new Date();
+
+  for(let i=1;i<=diasNoMes;i++){
+
+    const valor = mapa[i] || 0;
+
+    const isHoje =
+      i === hoje.getDate() &&
+      mes === hoje.getMonth() &&
+      ano === hoje.getFullYear();
+
+    calendar.innerHTML += `
+      <div class="day ${isHoje ? "today":""}" onclick="abrirDia(${i})">
+        <div class="day-number">${i}</div>
+        <div class="day-value">
+          ${valor ? moeda(valor) : ""}
+        </div>
+      </div>
+    `;
+  }
+}
+
+/* ===== MODAL ===== */
+function abrirDia(dia){
+
+  const ano = dataAtual.getFullYear();
+  const mes = dataAtual.getMonth();
+
+  const dataISO = new Date(ano, mes, dia)
+    .toISOString()
+    .split("T")[0];
+
+  const lista = dados.filter(d=>d.data_recebimento === dataISO);
+
+  let total = 0;
+
+  const agrupado = {};
+
+  lista.forEach(l=>{
+    const key = `${l.bandeira} - ${l.modalidade}`;
+    agrupado[key] = (agrupado[key] || 0) + Number(l.valor);
+    total += Number(l.valor);
+  });
+
+  let html = "";
+
+  Object.entries(agrupado).forEach(([k,v])=>{
+    html += `
+      <div class="item">
+        <strong>${k}</strong><br>
+        ${moeda(v)}
+      </div>
+    `;
+  });
+
+  document.getElementById("modalData").innerText = dataISO;
+  document.getElementById("modalTotal").innerText = moeda(total);
+  document.getElementById("modalConteudo").innerHTML =
+    html || "Sem recebimentos";
+
+  document.getElementById("modal").style.display = "flex";
+}
+
+function fecharModal(){
+  document.getElementById("modal").style.display = "none";
+}
+
+/* ===== MÊS ===== */
+function mesAnterior(){
+  dataAtual.setMonth(dataAtual.getMonth()-1);
+  montarCalendario();
+}
+
+function proximoMes(){
+  dataAtual.setMonth(dataAtual.getMonth()+1);
+  montarCalendario();
+}
+
+/* INIT */
+carregar();
 
 </script>
 
