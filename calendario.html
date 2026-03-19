@@ -3,7 +3,7 @@
 <head>
 
 <meta charset="UTF-8">
-<title>Agenda de Recebimentos • Mercatto</title>
+<title>Agenda Financeira • Mercatto</title>
 
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -18,9 +18,12 @@
 --border:#e5e7eb;
 --text:#0f172a;
 --muted:#64748b;
---primary:#2563eb;
+
 --green:#16a34a;
---shadow:0 6px 20px rgba(0,0,0,.06);
+--blue:#2563eb;
+
+--shadow:0 8px 30px rgba(0,0,0,.05);
+--radius:18px;
 }
 
 body{
@@ -36,22 +39,46 @@ padding:16px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:16px;
 flex-wrap:wrap;
+margin-bottom:20px;
 }
 
-.controls{
-display:flex;
-gap:10px;
+/* CARDS RESUMO */
+.resumo{
+display:grid;
+grid-template-columns:repeat(3,1fr);
+gap:14px;
+margin-bottom:20px;
 }
 
+@media(max-width:900px){
+.resumo{grid-template-columns:1fr}
+}
+
+.card{
+background:#fff;
+padding:16px;
+border-radius:18px;
+box-shadow:var(--shadow);
+}
+
+.card small{
+color:var(--muted);
+}
+
+.card h2{
+margin:6px 0 0;
+color:var(--green);
+}
+
+/* FILTRO */
 select{
 padding:10px;
 border-radius:10px;
 border:1px solid var(--border);
 }
 
-/* GRID */
+/* CALENDÁRIOS */
 .calendars{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -62,15 +89,13 @@ gap:16px;
 .calendars{grid-template-columns:1fr}
 }
 
-/* BOX */
 .box{
 background:#fff;
-border-radius:18px;
 padding:14px;
+border-radius:18px;
 box-shadow:var(--shadow);
 }
 
-/* CALENDAR */
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
@@ -97,7 +122,7 @@ transition:.2s;
 
 .day:hover{
 transform:translateY(-3px);
-border-color:var(--primary);
+border-color:var(--blue);
 }
 
 .day-value{
@@ -120,7 +145,8 @@ background:#fff;
 padding:20px;
 border-radius:20px;
 width:95%;
-max-width:400px;
+max-width:420px;
+box-shadow:0 20px 60px rgba(0,0,0,.2);
 }
 
 .total{
@@ -136,15 +162,34 @@ margin-bottom:10px;
 <body>
 
 <div class="header">
-<h2>💰 Agenda de Recebimentos</h2>
+<h2>💰 Agenda Financeira</h2>
 
-<div class="controls">
 <select id="empresaFiltro" onchange="carregar()">
 <option value="">Todas Empresas</option>
 </select>
 </div>
+
+<!-- RESUMO -->
+<div class="resumo">
+
+<div class="card">
+<small>Hoje</small>
+<h2 id="resHoje">R$ 0,00</h2>
 </div>
 
+<div class="card">
+<small>Mês Atual</small>
+<h2 id="resMes">R$ 0,00</h2>
+</div>
+
+<div class="card">
+<small>Total Geral</small>
+<h2 id="resTotal">R$ 0,00</h2>
+</div>
+
+</div>
+
+<!-- CALENDÁRIOS -->
 <div class="calendars">
 
 <div class="box">
@@ -153,7 +198,7 @@ margin-bottom:10px;
 </div>
 
 <div class="box">
-<h3 id="mesProximo"></h3>
+<h3 id="mesProx"></h3>
 <div id="calProx" class="calendar"></div>
 </div>
 
@@ -180,20 +225,17 @@ const sb = createClient(
 
 let dados = [];
 
-/* ===== FORMATAR DATA LOCAL ===== */
+/* FORMATAR DATA */
 function formatISO(date){
   const d = new Date(date);
-  return d.getFullYear() + "-" +
-    String(d.getMonth()+1).padStart(2,"0") + "-" +
-    String(d.getDate()).padStart(2,"0");
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 
-/* ===== MOEDA ===== */
 function moeda(v){
   return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
-/* ===== CARREGAR ===== */
+/* CARREGAR */
 async function carregar(){
 
   const empresa = document.getElementById("empresaFiltro").value;
@@ -209,14 +251,13 @@ async function carregar(){
   dados = data || [];
 
   montarFiltro();
-  montarTudo();
+  montarResumo();
+  montarCalendarios();
 }
 
-/* ===== FILTRO ===== */
+/* FILTRO */
 function montarFiltro(){
-
   const select = document.getElementById("empresaFiltro");
-
   const atual = select.value;
 
   const empresas = [...new Set(dados.map(d=>d.empresa).filter(Boolean))];
@@ -226,27 +267,47 @@ function montarFiltro(){
     empresas.map(e=>`<option ${e===atual?"selected":""}>${e}</option>`).join("");
 }
 
-/* ===== MONTAR TUDO ===== */
-function montarTudo(){
+/* RESUMO */
+function montarResumo(){
+
+  const hojeISO = formatISO(new Date());
+
+  let totalHoje = 0;
+  let totalMes = 0;
+  let totalGeral = 0;
 
   const hoje = new Date();
 
-  montarCalendario(
-    hoje.getFullYear(),
-    hoje.getMonth(),
-    "calAtual",
-    "mesAtual"
-  );
+  dados.forEach(d=>{
+    const dataISO = formatISO(d.data_recebimento);
+    const dt = new Date(d.data_recebimento);
 
-  montarCalendario(
-    hoje.getFullYear(),
-    hoje.getMonth()+1,
-    "calProx",
-    "mesProximo"
-  );
+    totalGeral += Number(d.valor);
+
+    if(dataISO === hojeISO){
+      totalHoje += Number(d.valor);
+    }
+
+    if(dt.getMonth() === hoje.getMonth() && dt.getFullYear() === hoje.getFullYear()){
+      totalMes += Number(d.valor);
+    }
+  });
+
+  document.getElementById("resHoje").innerText = moeda(totalHoje);
+  document.getElementById("resMes").innerText = moeda(totalMes);
+  document.getElementById("resTotal").innerText = moeda(totalGeral);
 }
 
-/* ===== CALENDARIO ===== */
+/* CALENDARIOS */
+function montarCalendarios(){
+
+  const hoje = new Date();
+
+  montarCalendario(hoje.getFullYear(), hoje.getMonth(), "calAtual", "mesAtual");
+  montarCalendario(hoje.getFullYear(), hoje.getMonth()+1, "calProx", "mesProx");
+}
+
+/* CALENDARIO */
 function montarCalendario(ano, mes, el, label){
 
   const container = document.getElementById(el);
@@ -294,14 +355,12 @@ function montarCalendario(ano, mes, el, label){
   }
 }
 
-/* ===== MODAL ===== */
+/* MODAL */
 function abrirDia(ano, mes, dia){
 
   const dataISO = formatISO(new Date(ano,mes,dia));
 
-  const lista = dados.filter(d=>{
-    return formatISO(d.data_recebimento) === dataISO;
-  });
+  const lista = dados.filter(d=> formatISO(d.data_recebimento) === dataISO);
 
   let total = 0;
   let html = "";
@@ -311,7 +370,7 @@ function abrirDia(ano, mes, dia){
 
     html += `
       <div>
-        ${l.bandeira} - ${l.modalidade}<br>
+        <strong>${l.bandeira}</strong> - ${l.modalidade}<br>
         ${moeda(l.valor)}
       </div><br>
     `;
