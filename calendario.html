@@ -18,19 +18,15 @@
 --border:#e5e7eb;
 --text:#0f172a;
 --muted:#64748b;
-
 --green:#16a34a;
 --blue:#2563eb;
-
---shadow:0 8px 30px rgba(0,0,0,.05);
---radius:18px;
+--shadow:0 10px 30px rgba(0,0,0,.05);
 }
 
 body{
 margin:0;
 font-family:Inter;
 background:var(--bg);
-color:var(--text);
 padding:16px;
 }
 
@@ -39,26 +35,22 @@ padding:16px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-flex-wrap:wrap;
 margin-bottom:20px;
+flex-wrap:wrap;
 }
 
-/* CARDS RESUMO */
+/* RESUMO */
 .resumo{
 display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:14px;
+gap:16px;
 margin-bottom:20px;
-}
-
-@media(max-width:900px){
-.resumo{grid-template-columns:1fr}
 }
 
 .card{
 background:#fff;
-padding:16px;
-border-radius:18px;
+padding:18px;
+border-radius:20px;
 box-shadow:var(--shadow);
 }
 
@@ -67,18 +59,11 @@ color:var(--muted);
 }
 
 .card h2{
-margin:6px 0 0;
 color:var(--green);
+margin:6px 0 0;
 }
 
-/* FILTRO */
-select{
-padding:10px;
-border-radius:10px;
-border:1px solid var(--border);
-}
-
-/* CALENDÁRIOS */
+/* GRID */
 .calendars{
 display:grid;
 grid-template-columns:1fr 1fr;
@@ -89,13 +74,15 @@ gap:16px;
 .calendars{grid-template-columns:1fr}
 }
 
+/* BOX */
 .box{
 background:#fff;
 padding:14px;
-border-radius:18px;
+border-radius:20px;
 box-shadow:var(--shadow);
 }
 
+/* CALENDARIO */
 .calendar{
 display:grid;
 grid-template-columns:repeat(7,1fr);
@@ -103,8 +90,8 @@ gap:10px;
 }
 
 .weekday{
-text-align:center;
 font-size:12px;
+text-align:center;
 color:var(--muted);
 }
 
@@ -112,17 +99,16 @@ color:var(--muted);
 border:1px solid var(--border);
 border-radius:14px;
 padding:10px;
-min-height:90px;
+min-height:95px;
 cursor:pointer;
 display:flex;
 flex-direction:column;
 justify-content:space-between;
-transition:.2s;
 }
 
 .day:hover{
-transform:translateY(-3px);
 border-color:var(--blue);
+transform:translateY(-3px);
 }
 
 .day-value{
@@ -146,7 +132,6 @@ padding:20px;
 border-radius:20px;
 width:95%;
 max-width:420px;
-box-shadow:0 20px 60px rgba(0,0,0,.2);
 }
 
 .total{
@@ -171,25 +156,23 @@ margin-bottom:10px;
 
 <!-- RESUMO -->
 <div class="resumo">
-
 <div class="card">
 <small>Hoje</small>
-<h2 id="resHoje">R$ 0,00</h2>
+<h2 id="resHoje"></h2>
 </div>
 
 <div class="card">
 <small>Mês Atual</small>
-<h2 id="resMes">R$ 0,00</h2>
+<h2 id="resMes"></h2>
 </div>
 
 <div class="card">
 <small>Total Geral</small>
-<h2 id="resTotal">R$ 0,00</h2>
+<h2 id="resTotal"></h2>
+</div>
 </div>
 
-</div>
-
-<!-- CALENDÁRIOS -->
+<!-- CALENDARIOS -->
 <div class="calendars">
 
 <div class="box">
@@ -225,10 +208,15 @@ const sb = createClient(
 
 let dados = [];
 
-/* FORMATAR DATA */
-function formatISO(date){
-  const d = new Date(date);
-  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+/* 🔥 DATA SEM FUSO */
+function getParts(dateStr){
+  // formato YYYY-MM-DD
+  const [ano,mes,dia] = dateStr.split("-");
+  return {
+    ano:Number(ano),
+    mes:Number(mes)-1,
+    dia:Number(dia)
+  };
 }
 
 function moeda(v){
@@ -257,6 +245,7 @@ async function carregar(){
 
 /* FILTRO */
 function montarFiltro(){
+
   const select = document.getElementById("empresaFiltro");
   const atual = select.value;
 
@@ -270,32 +259,31 @@ function montarFiltro(){
 /* RESUMO */
 function montarResumo(){
 
-  const hojeISO = formatISO(new Date());
+  const hoje = new Date();
+  const hojeISO = hoje.toISOString().split("T")[0];
 
   let totalHoje = 0;
   let totalMes = 0;
   let totalGeral = 0;
 
-  const hoje = new Date();
-
   dados.forEach(d=>{
-    const dataISO = formatISO(d.data_recebimento);
-    const dt = new Date(d.data_recebimento);
+
+    const p = getParts(d.data_recebimento);
 
     totalGeral += Number(d.valor);
 
-    if(dataISO === hojeISO){
+    if(d.data_recebimento === hojeISO){
       totalHoje += Number(d.valor);
     }
 
-    if(dt.getMonth() === hoje.getMonth() && dt.getFullYear() === hoje.getFullYear()){
+    if(p.mes === hoje.getMonth() && p.ano === hoje.getFullYear()){
       totalMes += Number(d.valor);
     }
   });
 
-  document.getElementById("resHoje").innerText = moeda(totalHoje);
-  document.getElementById("resMes").innerText = moeda(totalMes);
-  document.getElementById("resTotal").innerText = moeda(totalGeral);
+  resHoje.innerText = moeda(totalHoje);
+  resMes.innerText = moeda(totalMes);
+  resTotal.innerText = moeda(totalGeral);
 }
 
 /* CALENDARIOS */
@@ -324,12 +312,12 @@ function montarCalendario(ano, mes, el, label){
   const mapa = {};
 
   dados.forEach(d=>{
-    const dt = new Date(d.data_recebimento);
 
-    if(dt.getFullYear() !== ano || dt.getMonth() !== mes) return;
+    const p = getParts(d.data_recebimento);
 
-    const dia = dt.getDate();
-    mapa[dia] = (mapa[dia] || 0) + Number(d.valor);
+    if(p.ano !== ano || p.mes !== mes) return;
+
+    mapa[p.dia] = (mapa[p.dia] || 0) + Number(d.valor);
   });
 
   const diasSemana = ["Dom","Seg","Ter","Qua","Qui","Sex","Sáb"];
@@ -347,7 +335,7 @@ function montarCalendario(ano, mes, el, label){
     const valor = mapa[i] || 0;
 
     container.innerHTML += `
-      <div class="day" onclick="abrirDia(${ano},${mes},${i})">
+      <div class="day" onclick="abrirDia('${ano}-${String(mes+1).padStart(2,'0')}-${String(i).padStart(2,'0')}')">
         <div>${i}</div>
         <div class="day-value">${valor ? moeda(valor) : ""}</div>
       </div>
@@ -356,11 +344,9 @@ function montarCalendario(ano, mes, el, label){
 }
 
 /* MODAL */
-function abrirDia(ano, mes, dia){
+function abrirDia(dataISO){
 
-  const dataISO = formatISO(new Date(ano,mes,dia));
-
-  const lista = dados.filter(d=> formatISO(d.data_recebimento) === dataISO);
+  const lista = dados.filter(d=> d.data_recebimento === dataISO);
 
   let total = 0;
   let html = "";
@@ -376,16 +362,15 @@ function abrirDia(ano, mes, dia){
     `;
   });
 
-  document.getElementById("modalData").innerText = dataISO;
-  document.getElementById("modalTotal").innerText = moeda(total);
-  document.getElementById("modalConteudo").innerHTML =
-    html || "Sem recebimentos";
+  modalData.innerText = dataISO;
+  modalTotal.innerText = moeda(total);
+  modalConteudo.innerHTML = html || "Sem recebimentos";
 
-  document.getElementById("modal").style.display = "flex";
+  modal.style.display = "flex";
 }
 
 function fecharModal(){
-  document.getElementById("modal").style.display = "none";
+  modal.style.display = "none";
 }
 
 /* INIT */
