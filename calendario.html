@@ -18,16 +18,20 @@
 --border:#e5e7eb;
 --text:#0f172a;
 --muted:#64748b;
+
 --green:#16a34a;
 --blue:#2563eb;
---shadow:0 10px 30px rgba(0,0,0,.05);
+
+--shadow:0 12px 40px rgba(0,0,0,.06);
+--radius:18px;
 }
 
 body{
 margin:0;
 font-family:Inter;
 background:var(--bg);
-padding:16px;
+padding:20px;
+color:var(--text);
 }
 
 /* HEADER */
@@ -35,51 +39,75 @@ padding:16px;
 display:flex;
 justify-content:space-between;
 align-items:center;
-margin-bottom:20px;
 flex-wrap:wrap;
+margin-bottom:24px;
 }
 
 /* RESUMO */
 .resumo{
 display:grid;
 grid-template-columns:repeat(3,1fr);
-gap:16px;
-margin-bottom:20px;
+gap:18px;
+margin-bottom:24px;
+}
+
+@media(max-width:900px){
+.resumo{grid-template-columns:1fr}
 }
 
 .card{
-background:#fff;
-padding:18px;
+background:var(--card);
+padding:20px;
 border-radius:20px;
 box-shadow:var(--shadow);
+transition:.2s;
+}
+
+.card:hover{
+transform:translateY(-3px);
 }
 
 .card small{
 color:var(--muted);
+font-weight:500;
 }
 
 .card h2{
+margin:8px 0 0;
 color:var(--green);
-margin:6px 0 0;
+font-size:22px;
 }
 
-/* GRID */
+/* FILTRO */
+select{
+padding:12px;
+border-radius:12px;
+border:1px solid var(--border);
+font-weight:600;
+}
+
+/* CALENDÁRIOS */
 .calendars{
 display:grid;
 grid-template-columns:1fr 1fr;
-gap:16px;
+gap:18px;
 }
 
 @media(max-width:900px){
 .calendars{grid-template-columns:1fr}
 }
 
-/* BOX */
 .box{
-background:#fff;
-padding:14px;
+background:var(--card);
+padding:16px;
 border-radius:20px;
 box-shadow:var(--shadow);
+}
+
+/* TITULO */
+.month-title{
+font-weight:800;
+margin-bottom:12px;
 }
 
 /* CALENDARIO */
@@ -93,8 +121,10 @@ gap:10px;
 font-size:12px;
 text-align:center;
 color:var(--muted);
+font-weight:600;
 }
 
+/* DIA */
 .day{
 border:1px solid var(--border);
 border-radius:14px;
@@ -104,6 +134,8 @@ cursor:pointer;
 display:flex;
 flex-direction:column;
 justify-content:space-between;
+transition:.2s;
+background:#fff;
 }
 
 .day:hover{
@@ -111,9 +143,15 @@ border-color:var(--blue);
 transform:translateY(-3px);
 }
 
+.day-number{
+font-size:12px;
+color:var(--muted);
+}
+
 .day-value{
-color:var(--green);
+font-size:14px;
 font-weight:800;
+color:var(--green);
 }
 
 /* MODAL */
@@ -124,21 +162,51 @@ background:rgba(0,0,0,.6);
 display:none;
 align-items:center;
 justify-content:center;
+backdrop-filter:blur(6px);
 }
 
 .modal-box{
 background:#fff;
 padding:20px;
-border-radius:20px;
+border-radius:22px;
 width:95%;
 max-width:420px;
+box-shadow:0 25px 70px rgba(0,0,0,.25);
+animation:fade .2s ease;
+}
+
+@keyframes fade{
+from{opacity:0; transform:scale(.95)}
+to{opacity:1; transform:scale(1)}
+}
+
+.modal-header{
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:10px;
 }
 
 .total{
-font-size:20px;
+font-size:22px;
 font-weight:800;
 color:var(--green);
-margin-bottom:10px;
+margin-bottom:12px;
+}
+
+.item{
+padding:10px 0;
+border-bottom:1px solid var(--border);
+}
+
+.empty{
+text-align:center;
+color:var(--muted);
+padding:20px;
+}
+
+.close{
+cursor:pointer;
 }
 
 </style>
@@ -156,6 +224,7 @@ margin-bottom:10px;
 
 <!-- RESUMO -->
 <div class="resumo">
+
 <div class="card">
 <small>Hoje</small>
 <h2 id="resHoje"></h2>
@@ -170,18 +239,19 @@ margin-bottom:10px;
 <small>Total Geral</small>
 <h2 id="resTotal"></h2>
 </div>
+
 </div>
 
-<!-- CALENDARIOS -->
+<!-- CALENDÁRIOS -->
 <div class="calendars">
 
 <div class="box">
-<h3 id="mesAtual"></h3>
+<div id="mesAtual" class="month-title"></div>
 <div id="calAtual" class="calendar"></div>
 </div>
 
 <div class="box">
-<h3 id="mesProx"></h3>
+<div id="mesProx" class="month-title"></div>
 <div id="calProx" class="calendar"></div>
 </div>
 
@@ -190,10 +260,15 @@ margin-bottom:10px;
 <!-- MODAL -->
 <div class="modal" id="modal">
 <div class="modal-box">
+
+<div class="modal-header">
 <h3 id="modalData"></h3>
+<span class="close" onclick="fecharModal()">✕</span>
+</div>
+
 <div id="modalTotal" class="total"></div>
 <div id="modalConteudo"></div>
-<button onclick="fecharModal()">Fechar</button>
+
 </div>
 </div>
 
@@ -208,22 +283,22 @@ const sb = createClient(
 
 let dados = [];
 
-/* 🔥 DATA SEM FUSO */
+/* ===== DATA ===== */
 function getParts(dateStr){
-  // formato YYYY-MM-DD
   const [ano,mes,dia] = dateStr.split("-");
-  return {
-    ano:Number(ano),
-    mes:Number(mes)-1,
-    dia:Number(dia)
-  };
+  return { ano:+ano, mes:+mes-1, dia:+dia };
+}
+
+function formatBR(dateStr){
+  const [ano,mes,dia] = dateStr.split("-");
+  return `${dia}/${mes}/${ano}`;
 }
 
 function moeda(v){
   return Number(v).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 }
 
-/* CARREGAR */
+/* ===== CARREGAR ===== */
 async function carregar(){
 
   const empresa = document.getElementById("empresaFiltro").value;
@@ -243,7 +318,7 @@ async function carregar(){
   montarCalendarios();
 }
 
-/* FILTRO */
+/* ===== FILTRO ===== */
 function montarFiltro(){
 
   const select = document.getElementById("empresaFiltro");
@@ -256,37 +331,36 @@ function montarFiltro(){
     empresas.map(e=>`<option ${e===atual?"selected":""}>${e}</option>`).join("");
 }
 
-/* RESUMO */
+/* ===== RESUMO ===== */
 function montarResumo(){
 
   const hoje = new Date();
-  const hojeISO = hoje.toISOString().split("T")[0];
+  const hojeStr = `${hoje.getFullYear()}-${String(hoje.getMonth()+1).padStart(2,'0')}-${String(hoje.getDate()).padStart(2,'0')}`;
 
-  let totalHoje = 0;
-  let totalMes = 0;
-  let totalGeral = 0;
+  let hojeTotal = 0;
+  let mesTotal = 0;
+  let total = 0;
 
   dados.forEach(d=>{
-
     const p = getParts(d.data_recebimento);
 
-    totalGeral += Number(d.valor);
+    total += Number(d.valor);
 
-    if(d.data_recebimento === hojeISO){
-      totalHoje += Number(d.valor);
+    if(d.data_recebimento === hojeStr){
+      hojeTotal += Number(d.valor);
     }
 
     if(p.mes === hoje.getMonth() && p.ano === hoje.getFullYear()){
-      totalMes += Number(d.valor);
+      mesTotal += Number(d.valor);
     }
   });
 
-  resHoje.innerText = moeda(totalHoje);
-  resMes.innerText = moeda(totalMes);
-  resTotal.innerText = moeda(totalGeral);
+  resHoje.innerText = moeda(hojeTotal);
+  resMes.innerText = moeda(mesTotal);
+  resTotal.innerText = moeda(total);
 }
 
-/* CALENDARIOS */
+/* ===== CALENDÁRIOS ===== */
 function montarCalendarios(){
 
   const hoje = new Date();
@@ -295,7 +369,7 @@ function montarCalendarios(){
   montarCalendario(hoje.getFullYear(), hoje.getMonth()+1, "calProx", "mesProx");
 }
 
-/* CALENDARIO */
+/* ===== CALENDARIO ===== */
 function montarCalendario(ano, mes, el, label){
 
   const container = document.getElementById(el);
@@ -312,7 +386,6 @@ function montarCalendario(ano, mes, el, label){
   const mapa = {};
 
   dados.forEach(d=>{
-
     const p = getParts(d.data_recebimento);
 
     if(p.ano !== ano || p.mes !== mes) return;
@@ -336,14 +409,14 @@ function montarCalendario(ano, mes, el, label){
 
     container.innerHTML += `
       <div class="day" onclick="abrirDia('${ano}-${String(mes+1).padStart(2,'0')}-${String(i).padStart(2,'0')}')">
-        <div>${i}</div>
+        <div class="day-number">${i}</div>
         <div class="day-value">${valor ? moeda(valor) : ""}</div>
       </div>
     `;
   }
 }
 
-/* MODAL */
+/* ===== MODAL ===== */
 function abrirDia(dataISO){
 
   const lista = dados.filter(d=> d.data_recebimento === dataISO);
@@ -355,16 +428,16 @@ function abrirDia(dataISO){
     total += Number(l.valor);
 
     html += `
-      <div>
+      <div class="item">
         <strong>${l.bandeira}</strong> - ${l.modalidade}<br>
         ${moeda(l.valor)}
-      </div><br>
+      </div>
     `;
   });
 
-  modalData.innerText = dataISO;
+  modalData.innerText = formatBR(dataISO);
   modalTotal.innerText = moeda(total);
-  modalConteudo.innerHTML = html || "Sem recebimentos";
+  modalConteudo.innerHTML = html || `<div class="empty">Sem recebimentos</div>`;
 
   modal.style.display = "flex";
 }
