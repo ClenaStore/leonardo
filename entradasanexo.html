@@ -138,11 +138,17 @@ button{
   <h3>Pré-visualização</h3>
   <div id="preview" class="preview">Nenhum arquivo processado.</div>
 </div>
-
 <div class="card">
   <button onclick="salvarTudo()">Salvar no Sistema</button>
   <button style="margin-top:8px" onclick="abrirModal()">Ver Importações</button>
+  <button style="margin-top:8px" onclick="verResumoHoje()">
+    Ver Resumo do Dia
+  </button>
   <div id="msg"></div>
+</div>
+  <div class="card">
+  <h3>Resumo do Dia</h3>
+  <div id="resumoHoje">Clique em "Ver Resumo do Dia"</div>
 </div>
 
 <!-- MODAL -->
@@ -364,6 +370,112 @@ async function excluirImportacao(importId){
   if(!confirm("Excluir TODA a importação selecionada?")) return;
   await sb.from("resumo_entradas").delete().eq("import_id",importId);
   listarImportacoes();
+}
+
+
+async function excluirImportacao(importId){
+  if(!confirm("Excluir TODA a importação selecionada?")) return;
+  await sb.from("resumo_entradas").delete().eq("import_id",importId);
+  listarImportacoes();
+}
+
+function hojeISO(){
+  const agora = new Date(
+    new Date().toLocaleString("en-US",{ timeZone:"America/Bahia" })
+  );
+  return agora.toISOString().split("T")[0];
+}
+
+function normalizarCategoria(mod){
+  if(!mod || typeof mod !== "string") return "outros";
+
+  const mapa = {
+  "crédito": ["credito","cartao credito","totem credito","credito pos","pgto online credito","credito delivery","cart credito","crédito à vista"],
+  "débito": ["debito","pgto online debito","cartao debito","totem debito","debito pos","debito delivery","cart debito"],
+  "pix": ["pix","pgto online pix","qrcode","pix tef","pix cnpj","pix offline","pix itau","pix pos"],
+  "online": ["pagamento online","pagamentos online","refeicao","cart alimentacao"],
+  "consumo interno": ["funcionario","convenio empresa","consumo funcionarios","consumo musicos"],
+  "boleto": ["boleto"],
+  "crediário": ["crediario","crediario clientes"],
+  "voucher": ["voucher","cartao voucher","voucher pos","voucher delicia","voucher villa"],
+  "dinheiro": ["dinheiro","pgto online dinheiro"],
+  "bonificação": ["bonificacao"],
+  "catálogo delivery": ["catalogo delivery","catálogo delivery"],
+  "consumo sócio": ["socio","consumo sócio","consumo socio"],
+  "marketing": ["marketing"],
+  "transferência bancária": ["transferencia bancar","transferencia bancaria"],
+  "erros garçom": ["erros garcons"],
+  "sem faturamento": ["sem faturamento"],
+  "outros": []
+};
+
+
+
+
+  const m = mod.toLowerCase();
+
+  for(const [cat,keys] of Object.entries(mapa)){
+    if(keys.some(k => m.includes(k))) return cat;
+  }
+
+  return "outros";
+}
+
+async function verResumoHoje(){
+  const hoje = hojeISO();
+
+  const { data, error } = await sb
+    .from("resumo_entradas")
+    .select("empresa, modalidade, valor")
+    .eq("data_lancamento", hoje);
+
+  if(error){
+    document.getElementById("resumoHoje").innerHTML =
+      `<div class="error">Erro ao buscar dados</div>`;
+    return;
+  }
+
+  montarResumoHoje(data);
+}
+
+function montarResumoHoje(lista){
+  const porEmpresa = {};
+
+  lista.forEach(l=>{
+    const v = Number(l.valor)||0;
+
+    if(!porEmpresa[l.empresa]){
+      porEmpresa[l.empresa] = { total:0, cats:{} };
+    }
+
+    porEmpresa[l.empresa].total += v;
+
+    const cat = normalizarCategoria(l.modalidade);
+
+    porEmpresa[l.empresa].cats[cat] =
+      (porEmpresa[l.empresa].cats[cat]||0) + v;
+  });
+
+  let html = "";
+
+  Object.entries(porEmpresa).forEach(([empresa,info])=>{
+    html += `
+      <div class="item">
+        <strong style="color:#d4af37">${empresa}</strong><br>
+        Total: R$ ${info.total.toFixed(2)}
+
+        ${Object.entries(info.cats).map(([c,v])=>`
+          <div>• ${c}: R$ ${v.toFixed(2)}</div>
+        `).join("")}
+      </div>
+    `;
+  });
+
+  if(!html){
+    html = `<div class="muted">Sem dados hoje</div>`;
+  }
+
+  document.getElementById("resumoHoje").innerHTML = html;
 }
 </script>
 
