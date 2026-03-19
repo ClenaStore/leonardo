@@ -247,9 +247,11 @@ async function salvar(){
     return;
   }
 
-  const { error } = await sb
-    .from("agenda_recebimentos")
-    .insert(registros);
+await sb
+  .from("agenda_recebimentos")
+  .upsert(registros, {
+    onConflict: 'data_recebimento,empresa,bandeira,modalidade'
+  });
 
   document.getElementById("msg").innerHTML = error
     ? `<div class="error">Erro ao salvar</div>`
