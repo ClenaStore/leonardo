@@ -233,9 +233,10 @@ function processarArquivo(file, data, preview){
         let empresaFinal = empresaArquivo;
         if(!empresaArquivo){
           if(!caixaAtual) return;
-          empresaFinal = caixaAtual <= 5
-            ? "EMPORIO MERCATTO"
-            : "RESTAURANTE MERCATTO";
+empresaFinal =
+  caixaAtual <= 5 || caixaAtual === 7
+    ? "EMPORIO MERCATTO"
+    : "RESTAURANTE MERCATTO";
         }
 
         const key = `${empresaFinal}|${modalidade}|${caixaAtual||0}`;
