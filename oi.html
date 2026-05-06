@@ -155,10 +155,15 @@ html, body { overflow-x: hidden; }
     <button onclick="aplicarFiltro()">Filtrar</button>
   </div>
 
-  <div class="grupo">
-    <h3>EMPÓRIO</h3>
-    <div id="emporio"></div>
-  </div>
+<div class="grupo">
+  <h3>TOTAL MERCATTO</h3>
+  <div id="mercattoTotal"></div>
+</div>
+
+<div class="grupo">
+  <h3>EMPÓRIO</h3>
+  <div id="emporio"></div>
+</div>
 
   <div class="grupo">
     <h3>RESTAURANTE</h3>
@@ -249,13 +254,34 @@ function montarResumo(lista, di, df){
     porEmpresa[l.empresa].cats[cat] = (porEmpresa[l.empresa].cats[cat]||0) + v;
   });
 
-  emporio.innerHTML = "";
-  restaurante.innerHTML = "";
-  outros.innerHTML = "";
-  document.getElementById("grupo-outros").style.display = "none";
+emporio.innerHTML = "";
+restaurante.innerHTML = "";
+outros.innerHTML = "";
+document.getElementById("grupo-outros").style.display = "none";
 
-  Object.entries(porEmpresa).forEach(([empresa,info])=>{
-    const bloco = `
+/* ===== TOTAL MERCATTO ===== */
+let totalMercatto = {
+  total:0,
+  cats:{}
+};
+
+Object.entries(porEmpresa).forEach(([empresa,info])=>{
+
+    /* ===== SOMAR TOTAL MERCATTO ===== */
+    const grupoMercatto = classificarEmpresa(empresa);
+
+    if(grupoMercatto === "emporio" || grupoMercatto === "restaurante"){
+
+      totalMercatto.total += info.total;
+
+      Object.entries(info.cats).forEach(([cat,val])=>{
+        totalMercatto.cats[cat] =
+          (totalMercatto.cats[cat] || 0) + val;
+      });
+
+    }
+
+  const bloco = `
       <div class="card">
         <div class="top">
           <span>${empresa}</span>
@@ -276,7 +302,23 @@ function montarResumo(lista, di, df){
       outros.innerHTML += bloco;
     }
   });
+/* ===== CARD TOTAL MERCATTO ===== */
 
+mercattoTotal.innerHTML = `
+  <div class="card">
+    <div class="top">
+      <span>MERCATTO TOTAL</span>
+      <span>R$ ${BRL(totalMercatto.total)}</span>
+    </div>
+
+    ${Object.entries(totalMercatto.cats).map(([c,v])=>`
+      <div class="item">
+        <span>• ${c}</span>
+        <span>R$ ${BRL(v)}</span>
+      </div>
+    `).join("")}
+  </div>
+`;
   if(!emporio.innerHTML) emporio.innerHTML = '<div class="muted">Sem vendas</div>';
   if(!restaurante.innerHTML) restaurante.innerHTML = '<div class="muted">Sem vendas</div>';
 
